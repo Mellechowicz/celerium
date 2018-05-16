@@ -134,7 +134,7 @@ int main()
   std::cout << "Test #1: 3d state for hydrogen "
             << "atom (fine Coulomb potential discretization).\n";
   
-  status = solver_fine.GetEigenstate(5, 2, wave_function, energy);
+  status = solver_fine.GetEigenstate(3, 2, wave_function, energy);
 
   std::cout << solver_fine.GetLog() << "\n";
 
