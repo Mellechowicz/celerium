@@ -9,18 +9,18 @@ namespace celerium{
 // r_min:           cutoff for the radius. Potential in the range (0, r_min) is
 //                  assumed to be infinite. Note that for s-type solutions r_min
 //                  should be small (even of the order of 1e-10).
-//                  For other wave function r_min~0.001-0.1
+//                  For other wave functions r_min~0.001-0.1
 //                  might be sufficient.
 // energy_step:     initial energy step in the eigenvalue search algorithm
 //                  typical values: 0.001-0.1
-// matrix_dim:      dimension of a matrix eigenvalue problem used to roghly
+// matrix_dim:      dimension of a matrix eigenvalue problem used to roughly
 //                  estimate the eigenvalues.
 //                  Typical values: 1000-2000.
 // grid_size:       size of a mesh used for finding accurate solutions of
 //                  Schroedinger equation.
 //                  Typical values: 10^3 - 10^5.
 // matching_index:  index for which two iterative procedures starting from two
-//                  sides of the syste are matched.
+//                  sides of the system are matched.
 //                  Typical values: around grid_size/2.
 // energy_accuracy: target accuracy of energy determiantion.
 //                  Typical values: 1e-6 - 1e-10
@@ -50,7 +50,7 @@ class WFSolver {
   
   int GetEigenstate(size_t n, size_t l,
                       std::vector<double> &wave_function,
-                    double &energy){
+                    double &energy) {
 
     wave_function.clear();
 
