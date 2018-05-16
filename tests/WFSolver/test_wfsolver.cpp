@@ -24,7 +24,7 @@
       double x_max = log(r_max);
       for (size_t i = 1; i < number_of_samples; ++i) {
         const double r =
-            exp(x_min + (x_max - x_min)*i/((double)number_of_samples));
+            exp(x_min + (x_max - x_min)*i/((double)number_of_samples - 1.0));
         v.push_back(r);
       }
       return 0;
@@ -36,7 +36,7 @@
       double x_max = log(r_max);
       for (size_t i = 1; i < number_of_samples; ++i) {
         const double r =
-            exp(x_min + (x_max - x_min)*i/((double)number_of_samples));
+            exp(x_min + (x_max - x_min)*i/((double)number_of_samples - 1.0));
         v.push_back(-14.399645352/r);
       }
       return 0;
@@ -129,13 +129,12 @@ int main()
   std::vector<double> wave_function;
   double energy;
   int status;
-
-
+  std::vector<double> mesh;
 
   std::cout << "Test #1: 3d state for hydrogen "
             << "atom (fine Coulomb potential discretization).\n";
   
-  status = solver_fine.GetEigenstate(3, 2, wave_function, energy);
+  status = solver_fine.GetEigenstate(5, 2, wave_function, energy);
 
   std::cout << solver_fine.GetLog() << "\n";
 
@@ -158,13 +157,20 @@ int main()
     std::cout << "Calculated energy: " << energy << " (";
     std::cout << "exact: " << -1.51174366767 << ")\n";
     std::cout << "sqrt(abs(Ry/energy)): " << sqrt(fabs(13.605693009/energy));
+
+    coulomb_potential_coarse.get_mesh(mesh);
+    std::cout << "\n\nWave function:\n";
+    for (size_t i = 0; i < wave_function.size(); ++i) {
+      std::cout << mesh[i] << " " << wave_function[i] << "\n";
+    }
+    
   }
   
   
-  std::cout << "\n\nTest #3: 2p-like state for "
+  std::cout << "\n\nTest #3: 3p-like state for "
             << "custom potential.\n";
   
-  status = solver_arbitrary.GetEigenstate(2, 1, wave_function, energy);
+  status = solver_arbitrary.GetEigenstate(3, 1, wave_function, energy);
 
   std::cout << solver_arbitrary.GetLog() << "\n";
 
@@ -172,9 +178,16 @@ int main()
     std::cout << "\nResult:\n";
     std::cout << "Calculated energy: " << energy << "\n";
     std::cout << "sqrt(abs(Ry/energy)): " << sqrt(fabs(13.605693009/energy));
+
+    
+    arbitrary_potential.get_mesh(mesh);
+    std::cout << "\n\nWave function:\n";
+    for (size_t i = 0; i < wave_function.size(); ++i) {
+      std::cout << mesh[i] << " " << wave_function[i] << "\n";
+    }
   }
 
-  std::cout << "\n\nFINISHED\n\n";
+  std::cout << "\n\nTEST FINISHED\n\n";
   
   return 0;
 }

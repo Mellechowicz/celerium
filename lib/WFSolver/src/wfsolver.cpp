@@ -104,8 +104,8 @@ int SolveRadialSchroedingerEqn(potential_t potential,
     }
 
     if (iter  == 0) {
-    eigenstate.wave_function[grid_size-1].y = 0;
-    eigenstate.wave_function[grid_size-2].y = 1e-4*sqrt(dx2);
+    eigenstate.wave_function[grid_size-1].y = 1e-6;
+    eigenstate.wave_function[grid_size-2].y = 1e-6 + 1e-4*sqrt(dx2);
     }
     
     for (size_t i = grid_size-3; i > matching_index; --i) {
@@ -144,8 +144,6 @@ int SolveRadialSchroedingerEqn(potential_t potential,
 
 
     double scaling_factor =  eigenstate.wave_function[matching_index].y/y_up;
-
-    //std::cout << y_up << " " << eigenstate.wave_function[matching_index].y << "\n";
 
     for (size_t i = matching_index+1; i < grid_size; ++i) {
       eigenstate.wave_function[i].y *= scaling_factor;
@@ -323,8 +321,7 @@ int FindEigenstate(potential_t potential,
     }
   }
 
+   sslog << "\n*** FAIL! Target wave function could not be found... ***";
   log = sslog.str();
   return -1;
-  
-  
 }
