@@ -107,12 +107,12 @@ int main()
 {
   std::cout << std::fixed << std::setprecision(12);
 
-  CoulombPotential coulomb_potential_fine(10000, 1e-6, 40);
-  CoulombPotential coulomb_potential_coarse(50, 1e-6, 40);
+  CoulombPotential coulomb_potential_fine(10000, 1e-5, 40);
+  CoulombPotential coulomb_potential_coarse(50, 1e-5, 40);
   ArbitraryPotential arbitrary_potential;
 
   wf_solver_params params;
-  params.r_min = 1e-6;
+  params.r_min = 1e-5;
   params.energy_step = 0.001;
   params.matrix_dim = 2000;
   params.grid_size = 5000;
@@ -126,68 +126,119 @@ int main()
   WFSolver<ArbitraryPotential>
       solver_arbitrary(arbitrary_potential, params);
    
+  std::function<double(double)>
+      coulomb_potential_exact = [](double r) {return -14.399645352/r;};
+
+
+  
+  
   std::vector<double> wave_function;
   double energy;
-  int status;
   std::vector<double> mesh;
 
-  std::cout << "Test #1: 3d state for hydrogen "
+  std::cout << "Test #1: 1s state for hydrogen "
+            << "atom (exact Coulomb potential).\n";
+  std::cout << "         Using low-level solver.\n";
+
+  eigenstate_struct eigenstate;
+  int test1_status = SolveRadialSchroedingerEqn(coulomb_potential_exact,
+                                      0,
+                                      1e-12,
+                                      40,
+                                      -13.6,
+                                      0.1,
+                                      100000,
+                                      50000,
+                                      1e-10,
+                                      eigenstate);
+  if (test1_status == 0) {
+    std::cout << "\nCalculated energy: " << eigenstate.energy << " (";
+    std::cout << "exact: " << -13.605693009 << ")\n";
+    std::cout << "sqrt(abs(Ry/energy)): "
+              << sqrt(fabs(13.605693009/eigenstate.energy)) <<" (exact: 1)\n";
+    std::cout << "\nTEST #1 PASSED!\n";
+  }
+  else {
+    std::cout << "\nTEST #1 FAILED!\n";
+  }
+
+  std::cout << "\n\n";
+  std::cout << "Test #2: 3d state for hydrogen "
             << "atom (fine Coulomb potential discretization).\n";
+  std::cout << "         Using high-level solver.\n";
   
-  status = solver_fine.GetEigenstate(3, 2, wave_function, energy);
+  int test2_status = solver_fine.GetEigenstate(3, 2, wave_function, energy);
 
   std::cout << solver_fine.GetLog() << "\n";
 
-  if (status == 0) {
-    std::cout << "\nResult:\n";
-    std::cout << "Calculated energy: " << energy << " (";
+  if (test2_status == 0) {
+    std::cout << "\nCalculated energy: " << energy << " (";
     std::cout << "exact: " << -1.51174366767 << ")\n";
-    std::cout << "sqrt(abs(Ry/energy)): " << sqrt(fabs(13.605693009/energy));
+    std::cout << "sqrt(abs(Ry/energy)): "
+              << sqrt(fabs(13.605693009/energy)) << " (exact: 3)";
+    std::cout << "\nTEST #2 PASSED!\n";
+  }
+  else {
+        std::cout << "\nTEST #2 FAILED!\n";
   }
 
-  std::cout << "\n\nTest #2: 3d state for hydrogen "
+  std::cout << "\n\nTest #3: 3d state for hydrogen "
             << "atom (coarse Coulomb potential discretization).\n";
+  std::cout << "         Using high-level solver.\n";
   
-  status = solver_coarse.GetEigenstate(3, 2, wave_function, energy);
+  int test3_status = solver_coarse.GetEigenstate(3, 2, wave_function, energy);
 
   std::cout << solver_coarse.GetLog() << "\n";
 
-  if (status == 0) {
+  if (test3_status == 0) {
     std::cout << "\nResult:\n";
     std::cout << "Calculated energy: " << energy << " (";
     std::cout << "exact: " << -1.51174366767 << ")\n";
-    std::cout << "sqrt(abs(Ry/energy)): " << sqrt(fabs(13.605693009/energy));
+    std::cout << "sqrt(abs(Ry/energy)): "
+              << sqrt(fabs(13.605693009/energy)) << " (exact: 3)";
 
     coulomb_potential_coarse.get_mesh(mesh);
-    std::cout << "\n\nWave function:\n";
+    std::cout << "\n\nWave function (format: r, \Psi(r)):\n";
     for (size_t i = 0; i < wave_function.size(); ++i) {
       std::cout << mesh[i] << " " << wave_function[i] << "\n";
     }
-    
+
+    std::cout << "\nTEST #3 PASSED!\n";
+  }
+  else {
+        std::cout << "\nTEST #3 FAILED!\n";
   }
   
   
   std::cout << "\n\nTest #3: 3p-like state for "
             << "custom potential.\n";
+  std::cout << "         Using high-level solver.\n";
   
-  status = solver_arbitrary.GetEigenstate(3, 1, wave_function, energy);
+  int test4_status =
+      solver_arbitrary.GetEigenstate(3, 1, wave_function, energy);
 
   std::cout << solver_arbitrary.GetLog() << "\n";
 
-  if (status == 0) {
+  if (test4_status == 0) {
     std::cout << "\nResult:\n";
     std::cout << "Calculated energy: " << energy << "\n";
-    std::cout << "sqrt(abs(Ry/energy)): " << sqrt(fabs(13.605693009/energy));
+    std::cout << "sqrt(abs(Ry/energy)): "
+              << sqrt(fabs(13.605693009/energy));
 
     
     arbitrary_potential.get_mesh(mesh);
-    std::cout << "\n\nWave function:\n";
+    std::cout << "\n\nWave function (format: r, \Psi(r)):\n";
     for (size_t i = 0; i < wave_function.size(); ++i) {
       std::cout << mesh[i] << " " << wave_function[i] << "\n";
     }
-  }
 
-  std::cout << "\n\nTEST FINISHED\n\n";
+    std::cout << "\nTEST #4 PASSED!\n";
+  }
+  else {
+    std::cout << "\nTEST #4 FAILED!\n";
+  }
+  
+  std::cout << "\n\nTEST FINISHED...\n\n";
   
   return 0;
 }

@@ -6,11 +6,9 @@
 namespace celerium{
 
 // Description of the parameters:
-// r_min:           cutoff for the radius. Potential in the range (0, r_min) is
-//                  assumed to be infinite. Note that for s-type solutions r_min
-//                  should be small (even of the order of 1e-10).
-//                  For other wave functions r_min~0.001-0.1
-//                  might be sufficient.
+// r_min:           lower cutoff for the radius. This is required due to 
+//                  logarithmic grid used by the solver.
+//                  Typical values: ~ 1e-3 - 1e-12.
 // energy_step:     initial energy step in the eigenvalue search algorithm
 //                  typical values: 0.001-0.1
 // matrix_dim:      dimension of a matrix eigenvalue problem used to roughly
@@ -22,7 +20,12 @@ namespace celerium{
 // matching_index:  index for which two iterative procedures starting from two
 //                  sides of the system are matched.
 //                  Typical values: around grid_size/2.
-// energy_accuracy: target accuracy of energy determiantion.
+// energy_accuracy: stopping condition for eigenenergy determiantion.
+//                  The procedure stops if the enegy difference between
+//                  two consecutive steps is smaller than energy_accuracy.
+//                  In the case of slow convergence, energy_accuracy
+//                  might not reflect actual accuracy of computed
+//                  eigenvalue.
 //                  Typical values: 1e-6 - 1e-10
 struct wf_solver_params {
   double r_min;
@@ -38,7 +41,9 @@ template <class Potential>
 class WFSolver {
   
  public:
-  
+
+  // Initializes the solver with a potential
+  // and parameters.
   WFSolver(const Potential &potential,
                      const wf_solver_params &params) {
     this->potential = potential;
@@ -46,8 +51,18 @@ class WFSolver {
     this->log = "";
   }
 
+  // Return logs from the last call of GetEigenstate method.
+  // These should be consulted if GetEigenstate returns
+  // a non-zero value.
   const std::string &GetLog() const {return this->log;}
-  
+
+  // Calculates wave function and energy for the
+  // n-th eigenstate with angular momentum l.
+  // In case of success returns zero and
+  // a non-zero value otherwise.
+  // The eigenstate numbering starts from ONE, i.e.
+  // n = 1, 2, 3 ..., whereas l = 0, 1, 2, ...
+  // for the s, p, d, ... states.
   int GetEigenstate(size_t n, size_t l,
                       std::vector<double> &wave_function,
                     double &energy) {

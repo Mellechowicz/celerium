@@ -13,7 +13,7 @@ void Normalize(eigenstate_struct &eigenstate) {
   }
   
   for (auto &sample : eigenstate.wave_function) {
-    sample.y /= sqrt(scaling_factor * sample.x);
+    sample.y /= std::sqrt(scaling_factor * sample.x);
   }
   
 }
@@ -42,8 +42,8 @@ int SolveRadialSchroedingerEqn(potential_t potential,
                                double matching_accuracy,
                                eigenstate_struct &eigenstate) {
 
-  const double x_min = log(r_min);
-  const double x_max = log(r_max);  
+  const double x_min = std::log(r_min);
+  const double x_max = std::log(r_max);  
   const double dx2 = pow((x_max - x_min) / (grid_size-1.0), 2);
 
   eigenstate.wave_function.resize(grid_size);
@@ -78,10 +78,14 @@ int SolveRadialSchroedingerEqn(potential_t potential,
   
     double r0, r1, r2, y0, y1;
 
-    if (iter  == 0) {
-    eigenstate.wave_function[0].y = 0.0;
-    eigenstate.wave_function[1].y = 10*sqrt(dx2);
-    }
+    //if (iter  == 0) {
+    eigenstate.wave_function[0].y = 0.1;
+    eigenstate.wave_function[1].y =
+        eigenstate.wave_function[0].y *
+        std::pow(
+            eigenstate.wave_function[1].x/eigenstate.wave_function[0].x,
+            l + 0.5);
+    //}
     
     for (size_t i = 2; i <= matching_index; ++i) {
       r0 = eigenstate.wave_function[i-2].x;
@@ -103,10 +107,10 @@ int SolveRadialSchroedingerEqn(potential_t potential,
       }
     }
 
-    if (iter  == 0) {
+    //if (iter  == 0) {
     eigenstate.wave_function[grid_size-1].y = 1e-6;
-    eigenstate.wave_function[grid_size-2].y = 1e-6 + 1e-4*sqrt(dx2);
-    }
+    eigenstate.wave_function[grid_size-2].y = 1e-6 + 1e-4*std::sqrt(dx2);
+    //}
     
     for (size_t i = grid_size-3; i > matching_index; --i) {
       r0 = eigenstate.wave_function[i+2].x;
@@ -157,7 +161,7 @@ int SolveRadialSchroedingerEqn(potential_t potential,
         eigenstate.wave_function[matching_index].y *
         (2.0-(0.262468426082*r2*r2*(-potential(r2)+energy)-pow(l+0.5,2))*dx2);
 
-    derivative_jump /= sqrt(dx2);
+    derivative_jump /= std::sqrt(dx2);
     
 
     
@@ -167,11 +171,11 @@ int SolveRadialSchroedingerEqn(potential_t potential,
     energy0 = energy1;
     energy1 = energy;
     
-    if (iter > 1 && fabs(energy0 - energy) < matching_accuracy) {
+    if (iter > 1 && fabs(energy0 - energy1) < matching_accuracy) {
       if  (fabs(derivative_jump) > 0.01) return -1;
       eigenstate.energy = energy;
       eigenstate.nodes = n_nodes;
-      eigenstate.energy_error = fabs(energy0 - energy);
+      eigenstate.energy_error = fabs(energy0 - energy1);
       return 0;
     }
     
@@ -321,7 +325,8 @@ int FindEigenstate(potential_t potential,
     }
   }
 
-   sslog << "\n*** FAIL! Target wave function could not be found... ***";
+  sslog << "\n*** FAIL! Target wave function could not be found... ***";
   log = sslog.str();
   return -1;
 }
+
