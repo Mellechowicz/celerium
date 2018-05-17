@@ -198,7 +198,7 @@ int main()
               << sqrt(fabs(13.605693009/energy)) << " (exact: 3)";
 
     coulomb_potential_coarse.get_mesh(mesh);
-    std::cout << "\n\nWave function (format: r, \Psi(r)):\n";
+    std::cout << "\n\nWave function (format: r, Psi(r)):\n";
     for (size_t i = 0; i < wave_function.size(); ++i) {
       std::cout << mesh[i] << " " << wave_function[i] << "\n";
     }
@@ -227,7 +227,7 @@ int main()
 
     
     arbitrary_potential.get_mesh(mesh);
-    std::cout << "\n\nWave function (format: r, \Psi(r)):\n";
+    std::cout << "\n\nWave function (format: r, Psi(r)):\n";
     for (size_t i = 0; i < wave_function.size(); ++i) {
       std::cout << mesh[i] << " " << wave_function[i] << "\n";
     }
