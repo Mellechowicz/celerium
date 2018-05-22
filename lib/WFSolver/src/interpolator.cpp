@@ -1,5 +1,6 @@
 #include "../include/interpolator.h"
 
+
 Interpolator::Interpolator(const std::vector<sample_struct> &samples,
                            const gsl_interp_type * t) {
   

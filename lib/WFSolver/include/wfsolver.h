@@ -11,7 +11,6 @@
 #include "interpolator.h"
 #include <sstream>
 
-
 typedef std::function<double(double)> potential_t;
 
 struct eigenstate_struct {
@@ -56,8 +55,6 @@ int FindEigenstate(potential_t potential,
                    std::string &log);
 
 
-
-
-
 #endif /* WFSOLVER_H */
+
 

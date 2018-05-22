@@ -4,6 +4,7 @@
 #include <vector>
 #include <gsl/gsl_spline.h>
 
+
 struct sample_struct {
   double x;
   double y;

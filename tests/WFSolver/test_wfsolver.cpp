@@ -18,7 +18,7 @@
       this->r_max = r_max;
     }
 
-    int get_mesh(std::vector<double> &v) {
+    int get_mesh(std::vector<double> &v) const {
       v.clear();
       double x_min = log(r_min);
       double x_max = log(r_max);
@@ -30,7 +30,7 @@
       return 0;
     }
 
-    int get_local(std::vector<double> &v) {
+    int get_local(std::vector<double> &v) const {
       v.clear();
       double x_min = log(r_min);
       double x_max = log(r_max);
@@ -54,7 +54,7 @@
     
    public:
 
-    int get_mesh(std::vector<double> &v) {
+    int get_mesh(std::vector<double> &v) const {
       v =
       {
         0.0,
@@ -77,7 +77,7 @@
       return 0;
     }
 
-    int get_local(std::vector<double> &v) {
+    int get_local(std::vector<double> &v) const {
       v =
       {
         -3.0,
@@ -119,12 +119,8 @@ int main()
   params.matching_index = 2500;
   params.energy_accuracy = 1e-10;
 
-  WFSolver<CoulombPotential>
-      solver_fine(coulomb_potential_fine, params);
-  WFSolver<CoulombPotential>
-      solver_coarse(coulomb_potential_coarse, params);
-  WFSolver<ArbitraryPotential>
-      solver_arbitrary(arbitrary_potential, params);
+  WFSolver<CoulombPotential> solver_coulomb;
+  WFSolver<ArbitraryPotential> solver_arbitrary;
    
   std::function<double(double)>
       coulomb_potential_exact = [](double r) {return -14.399645352/r;};
@@ -167,9 +163,12 @@ int main()
             << "atom (fine Coulomb potential discretization).\n";
   std::cout << "         Using high-level solver.\n";
   
-  int test2_status = solver_fine.GetEigenstate(3, 2, wave_function, energy);
+  int test2_status = solver_coulomb.GetEigenstate(3, 2,
+                                                  coulomb_potential_fine,
+                                                  params,
+                                                  wave_function, energy);
 
-  std::cout << solver_fine.GetLog() << "\n";
+  std::cout << solver_coulomb.GetLog() << "\n";
 
   if (test2_status == 0) {
     std::cout << "\nCalculated energy: " << energy << " (";
@@ -186,9 +185,12 @@ int main()
             << "atom (coarse Coulomb potential discretization).\n";
   std::cout << "         Using high-level solver.\n";
   
-  int test3_status = solver_coarse.GetEigenstate(3, 2, wave_function, energy);
+  int test3_status = solver_coulomb.GetEigenstate(3, 2,
+                                                  coulomb_potential_coarse,
+                                                  params,
+                                                  wave_function, energy);
 
-  std::cout << solver_coarse.GetLog() << "\n";
+  std::cout << solver_coulomb.GetLog() << "\n";
 
   if (test3_status == 0) {
     std::cout << "\nResult:\n";
@@ -215,8 +217,11 @@ int main()
   std::cout << "         Using high-level solver.\n";
   
   int test4_status =
-      solver_arbitrary.GetEigenstate(3, 1, wave_function, energy);
-
+      solver_arbitrary.GetEigenstate(3, 1,
+                                     arbitrary_potential,
+                                     params,
+                                     wave_function, energy);
+  
   std::cout << solver_arbitrary.GetLog() << "\n";
 
   if (test4_status == 0) {

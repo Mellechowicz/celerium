@@ -1,6 +1,5 @@
 #include "../include/wfsolver.h"
 
-
 void Normalize(eigenstate_struct &eigenstate) {
   double scaling_factor = 0.0;
 
@@ -329,4 +328,5 @@ int FindEigenstate(potential_t potential,
   log = sslog.str();
   return -1;
 }
+
 

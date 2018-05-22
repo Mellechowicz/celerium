@@ -1,6 +1,16 @@
 #ifndef WFSOLVERINTERFACE_H
 #define WFSOLVERINTERFACE_H
 
+// This is a high-level interface for WFSolver library
+// that solves radial Schroedinger equation for a
+// user-provided radial poential.
+// To use it include this header file and
+// link against $(top_srcdir)/lib/WFSolver/libwfsolver.a.
+// This interace provides a template WFSolver
+// and the structure wf_solver_params used to
+// set up the solver. For exemplary uses
+// consult WFSolver in tests directory.
+
 #include "../lib/WFSolver/include/wfsolver.h"
 
 namespace celerium{
@@ -44,17 +54,14 @@ class WFSolver {
 
   // Initializes the solver with a potential
   // and parameters.
-  WFSolver(const Potential &potential,
-                     const wf_solver_params &params) {
-    this->potential = potential;
-    this->params = params;
-    this->log = "";
+  WFSolver() {
+    this->logs = "";
   }
 
   // Return logs from the last call of GetEigenstate method.
   // These should be consulted if GetEigenstate returns
   // a non-zero value.
-  const std::string &GetLog() const {return this->log;}
+  const std::string &GetLog() const {return this->logs;}
 
   // Calculates wave function and energy for the
   // n-th eigenstate with angular momentum l.
@@ -64,15 +71,17 @@ class WFSolver {
   // n = 1, 2, 3 ..., whereas l = 0, 1, 2, ...
   // for the s, p, d, ... states.
   int GetEigenstate(size_t n, size_t l,
-                      std::vector<double> &wave_function,
+                    const Potential &potential,
+                    const wf_solver_params &params,
+                    std::vector<double> &wave_function,
                     double &energy) {
 
     wave_function.clear();
 
     std::vector<double> mesh;
     std::vector<double> values;
-    this->potential.get_mesh(mesh);
-    this->potential.get_local(values);
+    potential.get_mesh(mesh);
+    potential.get_local(values);
 
     std::vector<sample_struct> samples(mesh.size());
     for (size_t i  = 0; i < mesh.size(); ++i) {
@@ -91,15 +100,15 @@ class WFSolver {
     int status = FindEigenstate(interp,
                                 n,
                                 l,
-                                this->params.r_min,
+                                params.r_min,
                                 r_max,
-                                this->params.matrix_dim,
-                                this->params.energy_step,
-                                this->params.grid_size,
-                                this->params.matching_index,
-                                this->params.energy_accuracy,
+                                params.matrix_dim,
+                                params.energy_step,
+                                params.grid_size,
+                                params.matching_index,
+                                params.energy_accuracy,
                                 eigenstate,
-                                this->log);
+                                this->logs);
     
       if (status == 0) {
         energy = eigenstate.energy;
@@ -115,9 +124,7 @@ class WFSolver {
   }
 
  private:
-  Potential potential;
-  wf_solver_params params;
-  std::string log;
+  std::string logs;
 };
 
 }
