@@ -37,5 +37,6 @@ AC_CHECK_FUNCS([pow sqrt])
 AC_CONFIG_FILES([Makefile
 		 lib/WFSolver/Makefile
 		 tests/ArithmeticVector/Makefile
-                 tests/WFSolver/Makefile])
+                 tests/WFSolver/Makefile
+		 tests/PotentialAndWFSolver/Makefile])
 AC_OUTPUT

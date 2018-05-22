@@ -71,7 +71,7 @@ class WFSolver {
   // n = 1, 2, 3 ..., whereas l = 0, 1, 2, ...
   // for the s, p, d, ... states.
   int GetEigenstate(size_t n, size_t l,
-                    const Potential &potential,
+                    Potential &potential,
                     const wf_solver_params &params,
                     std::vector<double> &wave_function,
                     double &energy) {
