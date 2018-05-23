@@ -1,2 +1,2 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = lib/WFSolver tests/ArithmeticVector tests/WFSolver tests/PotentialAndWFSolver
+SUBDIRS = lib/WFSolver tests/ArithmeticVector tests/WFSolver tests/PotentialAndWFSolver tests/Potential

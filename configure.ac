@@ -38,5 +38,6 @@ AC_CONFIG_FILES([Makefile
 		 lib/WFSolver/Makefile
 		 tests/ArithmeticVector/Makefile
                  tests/WFSolver/Makefile
+		 tests/Potential/Makefile
 		 tests/PotentialAndWFSolver/Makefile])
 AC_OUTPUT

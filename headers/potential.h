@@ -9,6 +9,7 @@
 #include <functional>
 #include <stdexcept>
 #include <algorithm>
+#include <cmath>
 
 #ifdef _VERBOSE
   #include <chrono>
@@ -28,6 +29,9 @@ protected:
 	bool was_file_read;
 	bool was_file_set;
 	stoT convert;
+
+	const double a0_to_A  = 5.2917721092e-1;
+	const double Ry_to_eV = 13.605693009;
 
 	// parser
 	std::size_t read_file(){
@@ -110,7 +114,11 @@ protected:
 		+std::to_string( V_length)+std::string(" while  q_length= ")+std::to_string( q_length));
 
 	    was_file_read = true;
-	  
+
+	  std::for_each( r.begin(), r.end(),[&](T& x){ x*=a0_to_A;});
+	  std::for_each(dr.begin(),dr.end(),[&](T& x){ x*=pow(a0_to_A,3);});
+	  std::for_each( V.begin(), V.end(),[&](T& x){ x*=Ry_to_eV;});
+
 #ifdef _VERBOSE
 	  auto stop = std::chrono::system_clock::now();
 	  std::cerr<<" success\n\t\t\tRead "<<r_length<<" records from file "<<file_name<<","<<std::endl;
