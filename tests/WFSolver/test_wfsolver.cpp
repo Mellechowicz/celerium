@@ -139,13 +139,13 @@ int main()
   eigenstate_struct eigenstate;
   int test1_status = SolveRadialSchroedingerEqn(coulomb_potential_exact,
                                       0,
-                                      1e-12,
-                                      40,
+                                      1e-14,
+                                      50,
                                       -13.6,
-                                      0.1,
+                                      0.01,
+                                      200000,
                                       100000,
-                                      50000,
-                                      1e-10,
+                                      1e-12,
                                       eigenstate);
   if (test1_status == 0) {
     std::cout << "\nCalculated energy: " << eigenstate.energy << " (";

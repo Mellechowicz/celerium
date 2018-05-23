@@ -41,6 +41,27 @@ int SolveRadialSchroedingerEqn(potential_t potential,
                                double matching_accuracy,
                                eigenstate_struct &eigenstate) {
 
+
+  if (r_min < 0)
+    throw std::invalid_argument(
+        "SolveRadialSchroedingerEqn: argument r_min must be positive");
+  if (r_max < r_min)
+    throw std::invalid_argument(
+        "SolveRadialSchroedingerEqn: argument \
+r_max must be greater than r_min");
+  if (grid_size < 10)
+    throw std::invalid_argument(
+        "SolveRadialSchroedingerEqn: argument grid_size \
+must be grater than 9.");
+  if (matching_index < 3)
+    throw std::invalid_argument(
+        "SolveRadialSchroedingerEqn: argument matching_index \
+must be grater than 2.");
+  if (matching_index + 3 > grid_size)
+    throw std::invalid_argument(
+        "SolveRadialSchroedingerEqn: argument matching_index must \
+be smaller than grid_size - 3.");
+  
   const double x_min = std::log(r_min);
   const double x_max = std::log(r_max);  
   const double dx2 = pow((x_max - x_min) / (grid_size-1.0), 2);
@@ -60,7 +81,7 @@ int SolveRadialSchroedingerEqn(potential_t potential,
   double val0 = 0.0;
   double val1 = 0.0;
       
-  for (size_t iter = 0; iter < 500; ++iter) {
+  for (size_t iter = 0; iter < 200; ++iter) {
 
     n_nodes = 0;
 
@@ -169,8 +190,12 @@ int SolveRadialSchroedingerEqn(potential_t potential,
 
     energy0 = energy1;
     energy1 = energy;
+
+
+    double estimated_error =
+        fabs(val1*(energy - energy0)/(derivative_jump - val0));
     
-    if (iter > 1 && fabs(energy0 - energy1) < matching_accuracy) {
+    if (iter > 1 && estimated_error < matching_accuracy) {
       if  (fabs(derivative_jump) > 0.01) return -1;
       eigenstate.energy = energy;
       eigenstate.nodes = n_nodes;
@@ -238,7 +263,6 @@ void FindEigenvalueCandidates(
   std::sort(eigenvalue_candidates.begin(), eigenvalue_candidates.end());
 }
 
-
 int FindEigenstate(potential_t potential,
                    size_t n,
                    size_t l,
@@ -253,11 +277,16 @@ int FindEigenstate(potential_t potential,
                    std::string &log) {
 
   std::stringstream sslog;
-  if (n == 0 || l+1 > n) {
-    sslog << "\nERROR: Invalid combination of wave function indices (n, l).";
-    log = sslog.str();
-    return -1;
-  }
+
+    if (n == 0)
+    throw std::invalid_argument(
+        "FindEigenstate: Invalid level index n = 0. The smallest \
+allowed value is n = 1.");
+    if (l+1 > n)
+    throw std::invalid_argument(
+        "FindEigenstate: Invalid index l. It is required that l < n.");
+
+  
   
   std::vector<double> eigenvalue_candidates;
 

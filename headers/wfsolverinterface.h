@@ -89,6 +89,20 @@ class WFSolver {
     potential.get_mesh(mesh);
     potential.get_local(values);
 
+    if (mesh.size() == 0) {
+      throw std::invalid_argument(
+          "celerium::WFSolver.GetEigenstate: method get_mesh from provided \
+potential returned an empty vector.");
+    }
+
+    if (mesh.size() == 0) {
+      throw std::invalid_argument(
+          "celerium::WFSolver.GetEigenstate: method get_local from provided \
+potential returned an empty vector.");
+    }
+
+    
+    
     std::vector<sample_struct> samples(mesh.size());
     for (size_t i  = 0; i < mesh.size(); ++i) {
       samples[i].x = mesh[i];

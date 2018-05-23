@@ -70,3 +70,9 @@ stamp-h1
 *.lo
 *.gcno
 *.gcda
+
+# gtags
+GPATH
+GRTAGS
+GSYMS
+GTAGS

@@ -29,7 +29,7 @@ int main() {
                                     energy);
 
 
-  std::cout << "\nDetermination of the 3d-like state for Cr:";
+  std::cout << "\nDetermination of the 3p-like state for Cr:";
   std::cout << "\n\n" << solver.GetLog() << "\n\n";
   
   if (status == 0) {
