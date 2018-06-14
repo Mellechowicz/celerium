@@ -1,5 +1,5 @@
 #include "../../headers/potential.h"
-#include "../../headers/wfsolverinterface.h"
+#include "../../headers/wfsolver_interface.h"
 #include <iomanip>
 
 using namespace celerium;

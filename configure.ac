@@ -35,9 +35,11 @@ AC_TYPE_SIZE_T
 AC_CHECK_FUNCS([pow sqrt])
 
 AC_CONFIG_FILES([Makefile
-		 lib/WFSolver/Makefile
 		 tests/ArithmeticVector/Makefile
-                 tests/WFSolver/Makefile
+                 tests/WFSolverInterface/Makefile
 		 tests/Potential/Makefile
-		 tests/PotentialAndWFSolver/Makefile])
+		 tests/PotentialAndWFSolver/Makefile
+		 tests/AtomicWaveFunction/Makefile
+		 tests/Interpolator/Makefile
+		 tests/SphericalHarmonics/Makefile])
 AC_OUTPUT

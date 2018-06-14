@@ -1,6 +1,3 @@
-#ifndef WFSOLVER_H
-#define WFSOLVER_H
-
 #include <functional>
 #include <vector>
 #include <iostream>
@@ -10,6 +7,19 @@
 #include <algorithm>
 #include "interpolator.h"
 #include <sstream>
+
+// This is a low-level solver of the spherically-symmertic Schroedinger
+// equation. The radial potential is provided through a callable object.
+// The results are stored in the eigenstate_struct, containing
+// radial wave function (represented as a vector of sample_struct,
+// i.e., [x, \Psi(x)] pairs), eigenergy, and additional information:
+// number of nodes in the radial wave function, and crudely approximated
+// uncertainty of eigenvalue.
+
+#ifndef WFSOLVER_H
+#define WFSOLVER_H
+
+namespace celerium {
 
 typedef std::function<double(double)> potential_t;
 
@@ -54,6 +64,10 @@ int FindEigenstate(potential_t potential,
                    eigenstate_struct &eigenstate,
                    std::string &log);
 
+// Include sources
+#include "../lib/wfsolver.cpp"
+
+} // end namespace celerium
 
 #endif /* WFSOLVER_H */
 

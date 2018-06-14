@@ -1,6 +1,8 @@
-#include <wfsolverinterface.h>
+#include <wfsolver_interface.h>
 #include <iostream>
 #include <iomanip>      // std::setprecision
+
+using namespace celerium;
 
   class CoulombPotential{
     
@@ -212,7 +214,7 @@ int main()
   }
   
   
-  std::cout << "\n\nTest #3: 3p-like state for "
+  std::cout << "\n\nTest #4: 3p-like state for "
             << "custom potential.\n";
   std::cout << "         Using high-level solver.\n";
   
@@ -242,8 +244,49 @@ int main()
   else {
     std::cout << "\nTEST #4 FAILED!\n";
   }
+
+
+  std::cout << "\n\nTest #5: 3p-like state for "
+            << "custom potential.\n";
+  std::cout << "         Using high-level solver. Interpolated solution.\n";
+
+
+  Interpolator test_5_wave_function;
+  int test5_status =
+      solver_arbitrary.GetEigenstate(3, 1,
+                                     arbitrary_potential,
+                                     params,
+                                     test_5_wave_function, energy);
+  
+  std::cout << solver_arbitrary.GetLog() << "\n";
+
+  if (test5_status == 0) {
+    std::cout << "\nResult:\n";
+    std::cout << "Calculated energy: " << energy << "\n";
+    std::cout << "sqrt(abs(Ry/energy)): "
+              << sqrt(fabs(13.605693009/energy));
+
+    
+    arbitrary_potential.get_mesh(mesh);
+    std::cout << "\n\nWave function (format: r, Psi(r)):\n";
+    for (size_t i = 0; i < 40; ++i) {
+      double x_i = mesh.front() +
+                   i * (20.0) / 40.0;
+      std::cout << x_i << " " << test_5_wave_function(x_i) << "\n";
+    }
+
+    std::cout << "\nTEST #5 PASSED!\n";
+  }
+  else {
+    std::cout << "\nTEST #5 FAILED!\n";
+  }
+
+
+
   
   std::cout << "\n\nTEST FINISHED...\n\n";
   
   return 0;
 }
+
+

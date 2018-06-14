@@ -1,4 +1,4 @@
-#include "../include/wfsolver.h"
+#include "../headers/wfsolver.h"
 
 void Normalize(eigenstate_struct &eigenstate) {
   double scaling_factor = 0.0;
