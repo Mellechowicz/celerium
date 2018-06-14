@@ -38,9 +38,10 @@ int main()
   };
 
 
+
   // Interpolate between samples using default settings (csplines).
   Interpolator interp(samples_sin);
-
+ 
   std::cout << std::setw(20) << "x";
   std::cout << std::setw(20) << "sin(x)";
   std::cout << std::setw(20) << "interp(x)";
@@ -94,6 +95,7 @@ int main()
   
   std::cout << "\n\nTEST FINISHED...\n\n";
 
+  
   
   return 0;
 }

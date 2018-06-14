@@ -10,20 +10,23 @@ Interpolator::Interpolator() {
 }
 
 
-Interpolator::Interpolator(const std::vector<sample_struct> &samples) {  
+Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
   double x [samples.size()];
   double y [samples.size()];
-    
+
+  this->x_max = 0;
+  this->x_min = 0;
+  
   for (size_t i = 0; i < samples.size(); ++i) {
     x[i] = samples[i].x;
     y[i] = samples[i].y;
     if (x[i] > x_max || i == 0) x_max = x[i];
     if (x[i] < x_min || i == 0) x_min = x[i];
   }
-
-  this->acc = gsl_interp_accel_alloc ();
-  this->spline = gsl_spline_alloc (gsl_interp_cspline, samples.size());
-  gsl_spline_init (spline, x, y, samples.size());
+    
+  this->acc = gsl_interp_accel_alloc();
+  this->spline = gsl_spline_alloc(gsl_interp_cspline, samples.size());
+  gsl_spline_init(spline, x, y, samples.size());
   this->t = gsl_interp_cspline;
   this->samples = samples;
 }
@@ -34,6 +37,9 @@ Interpolator::Interpolator(const std::vector<sample_struct> &samples,
   
   double x [samples.size()];
   double y [samples.size()];
+
+  this->x_max = 0;
+  this->x_min = 0;
 
   for (size_t i = 0; i < samples.size(); ++i) {
     x[i] = samples[i].x;
@@ -95,6 +101,9 @@ Interpolator &Interpolator::operator=(const Interpolator &rhs) {
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
 
+  this->x_max = 0;
+  this->x_min = 0;
+
   for (size_t i = 0; i < rhs.samples.size(); ++i) {
     x[i] = rhs.samples[i].x;
     y[i] = rhs.samples[i].y;
@@ -120,6 +129,9 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
   double x [samples.size()];
   double y [samples.size()];
 
+  this->x_max = 0;
+  this->x_min = 0;
+  
   for (size_t i = 0; i < samples.size(); ++i) {
     x[i] = samples[i].x;
     y[i] = samples[i].y;
@@ -142,6 +154,9 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
     
   double x [samples.size()];
   double y [samples.size()];
+
+  this->x_max = 0;
+  this->x_min = 0;
 
   for (size_t i = 0; i < samples.size(); ++i) {
     x[i] = samples[i].x;
