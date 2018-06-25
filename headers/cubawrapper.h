@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <random>
 #include <limits>
+#include <memory>
 #include <cmath>
 #include <cuba.h>
 #include <iostream>
@@ -15,38 +16,26 @@
 namespace celerium{
 namespace CUBA{
 
-
-template<auto *function, auto *hyperCube>
+template<auto *function, size_t NDIM>
 static int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
 	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
 
-  auto xi = new double(*ndim);
-  double jacobian = 1.0;
-  for(int i=0; i<*ndim; ++i){
-    jacobian *= (hyperCube->operator[](i).second - hyperCube->operator[](i).first);
-    xi[i] = hyperCube->operator[](i).first + (hyperCube->operator[](i).second - hyperCube->operator[](i).first)*x[i];
+  auto hyperCube = *static_cast<std::array<std::pair<double,double>,NDIM>*>(userdata);
+  double xi[NDIM];
+  for(size_t i=0; i<NDIM; ++i){
+    xi[i] = hyperCube[i].first + (hyperCube[i].second - hyperCube[i].first)*x[i];
   }
 
   int result = function(xi,f);
 
-  for(int i=0; i<*ndim; ++i)
-	  f[i] *=1.0;// jacobian;
-
-  delete xi;
-
   return result;
 }
 
-template<auto *function>
-static int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
-	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
-
-  return function(x,f);
-}
-
-template<auto *F, size_t NDIM, size_t NCOMP, std::array<std::pair<double,double>,NDIM>* hyperCube = nullptr>
+template<auto *F, size_t NDIM, size_t NCOMP>
 class Cuba{
 private:
+  void* hyperCube;
+
   int hasFailed;
 
   std::mt19937 seed_generator;
@@ -56,18 +45,21 @@ private:
   double jacobian;
 
 public:
-  Cuba(){
+  Cuba(std::array<std::pair<double,double>,NDIM>& _hyperCube){
+    hyperCube =  static_cast<void*>(&_hyperCube);
     seed_generator = std::mt19937(std::random_device()());
     uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
     spin = NULL;
 
     jacobian = 1.0;
-    for(const auto& limits : *hyperCube)
+    for(const auto& limits : _hyperCube)
       jacobian *= limits.second - limits.first;
   }
 
-  Cuba(int _maxeval, int _mineval = 0, double _epsrel = 1.52587890625e-05 /*2^-16*/):
+  Cuba(std::array<std::pair<double,double>,NDIM>& _hyperCube, int _maxeval, 
+       int _mineval = 0, double _epsrel = 1.52587890625e-05 /*2^-16*/):
     parameters(_maxeval,_mineval,_epsrel){ 
+    hyperCube =  static_cast<void*>(&_hyperCube);
     seed_generator = std::mt19937(std::random_device()());
     uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
     spin = NULL;
@@ -75,8 +67,11 @@ public:
     parameters.epsabs = _epsrel/64;
 
     jacobian = 1.0;
-    for(const auto& limits : *hyperCube)
+    for(const auto& limits : _hyperCube)
       jacobian *= limits.second - limits.first;
+  }
+
+  virtual ~Cuba(){
   }
 
   struct Parameters{
@@ -135,7 +130,7 @@ public:
     double maxchisq;
     double mindeviation;
     int ngiven;
-    int ldxgiven  = parameters.nDim;
+    int ldxgiven;
     double* xgiven;
     int nextra;
     int key;
@@ -177,8 +172,7 @@ private:
 
 public:
  int suave_result(double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
-	 if(hyperCube->size()) return suave_explicit(cFunction<F,hyperCube>,NULL,result,errorEstimate,probability,stepsEvaluated);
-	 return suave_explicit(cFunction<F>,NULL,result,errorEstimate,probability,stepsEvaluated);
+	 return suave_explicit(cFunction<F,NDIM>,hyperCube,result,errorEstimate,probability,stepsEvaluated);
 
  }
 
@@ -203,7 +197,7 @@ private:
             parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
             parameters.mineval, parameters.maxeval, parameters.key1, parameters.key2, parameters.key3,
 	    parameters.maxpass, parameters.border, parameters.maxchisq, parameters.mindeviation,
-	    parameters.ngiven, parameters.ldxgiven, NULL/*parameters.xgiven*/, parameters.nextra, peakfinder, 
+	    parameters.ngiven, parameters.ldxgiven, parameters.xgiven, parameters.nextra, peakfinder, 
             parameters.statefile, NULL, &nregions, &stepsEvaluated, 
 	    &hasFailed, result, errorEstimate, probability);
 
@@ -217,8 +211,7 @@ private:
 
 public:
  int divonne_result(double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
-	 if(hyperCube->size()) return divonne_explicit(cFunction<F,hyperCube>,NULL,NULL,result,errorEstimate,probability,stepsEvaluated);
-	 return divonne_explicit(cFunction<F>,NULL,NULL,result,errorEstimate,probability,stepsEvaluated);
+	 return divonne_explicit(cFunction<F,NDIM>,hyperCube,NULL,result,errorEstimate,probability,stepsEvaluated);
  }
 
  int divonne_result(std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
