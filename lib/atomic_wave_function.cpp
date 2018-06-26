@@ -66,7 +66,14 @@ double AtomicWaveFunction<RadialWaveFunction>::Laplacian(
 
   if (r == 0.0) return 0.0;
 
-  return this->radial_function.D2(r) +
-      this->radial_function.D1(r)*2.0/r -
-      1.0/r/r * this->l*(this->l + 1) * this->radial_function(r);  
+  double result = this->radial_function.D2(r) +
+                  this->radial_function.D1(r)*2.0/r -
+                  1.0/r/r * this->l*(this->l + 1) * this->radial_function(r);
+
+  result *= RealSphericalHarmonic(this->l, this->m,
+                                  cartesian_coords[0],
+                                  cartesian_coords[1],
+                                  cartesian_coords[2]);
+  
+  return result;  
 }

@@ -76,3 +76,8 @@ GPATH
 GRTAGS
 GSYMS
 GTAGS
+TAGS
+
+# Compilation database
+*.json
+*.yaml

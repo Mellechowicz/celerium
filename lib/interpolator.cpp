@@ -1,6 +1,5 @@
 #include "../headers/interpolator.h"
 
-
 Interpolator::Interpolator() {
   this->acc = nullptr;
   this->spline = nullptr;
@@ -266,10 +265,8 @@ initialized with any data. Interpolator::Int cannot be executed.");
   return result;
 }
 
-
-
-
-
 const std::vector<sample_struct> &Interpolator::GetSamples() const {
   return this->samples;
 }
+
+

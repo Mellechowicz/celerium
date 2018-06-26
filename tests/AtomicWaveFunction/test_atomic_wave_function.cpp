@@ -201,7 +201,7 @@ int main()
   std::cout << "of the Schroedinger equation is";
   std::cout << " compared with analytical result.\n\n";
   
-  std::cout << std::setw(9) << std::left << "x"
+  std::cout << std::setw(9) << std::left << "x" 
             << std::setw(9) << std::left << "y"
             << std::setw(21) << std::left << "z"
             << std::setw(21) << std::left << "Delta Psi (exact)"

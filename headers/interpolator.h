@@ -1,7 +1,3 @@
-#include <vector>
-#include <gsl/gsl_spline.h>
-#include <stdexcept>
-
 // This is a wrapper for the GSL spline interpolation package.
 // Discrete data are provided using a vector of sample_struct.
 // the Interpolator object performs interpolation and
@@ -13,6 +9,10 @@
 #ifndef INTERPOLATOR_H
 #define INTERPOLATOR_H
 
+#include <vector>
+#include <gsl/gsl_spline.h>
+#include <stdexcept>
+
 namespace celerium {
 
 // Stores a single sample:
@@ -21,6 +21,10 @@ namespace celerium {
 struct sample_struct {
   double x;
   double y;
+
+  bool operator==(sample_struct rhs) const {
+    return (x == rhs.x) && (y == rhs.y);
+  }
 };
 
 // Performs interpolation and
@@ -38,7 +42,7 @@ class Interpolator {
   // Initializes the interpolator with the provided samples
   // using defult gsl_interp_cspline interpolation.
   Interpolator(const std::vector<sample_struct> &samples);
-
+  
   // Initializes the interpolator with the provided samples
   // using inteprolation type selected by the user.
   // Valid choices are:

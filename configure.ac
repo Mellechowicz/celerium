@@ -41,5 +41,8 @@ AC_CONFIG_FILES([Makefile
 		 tests/PotentialAndWFSolver/Makefile
 		 tests/AtomicWaveFunction/Makefile
 		 tests/Interpolator/Makefile
-		 tests/SphericalHarmonics/Makefile])
+		 tests/SphericalHarmonics/Makefile
+		 tests/OrbitalClass/Makefile
+		 tests/Element/Makefile
+		 tests/Lattice/Makefile])
 AC_OUTPUT
