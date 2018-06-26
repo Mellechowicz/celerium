@@ -1,0 +1,180 @@
+#ifndef _CUBAWRAPPER_H
+#define _CUBAWRAPPER_H
+
+#include <array>
+#include <algorithm>
+#include <functional>
+#include <typeindex>
+#include <stdexcept>
+#include <random>
+#include <limits>
+#include <cmath>
+#include <cuba.h>
+#include <iostream>
+
+namespace celerium{
+namespace CUBA{
+
+template<auto *function, auto& hyperCube>
+int cFunction(const int *ndim, const cubareal x[],
+	      const int *ncomp, cubareal f[], void *userdata){
+
+  cubareal xi[*ndim];
+  cubareal jacobian = 1.0;
+  for(i=0; i<*ndim; ++i){
+	  jacobian *= (hyperCube[i].second - hyperCube[i].first);
+	  x[i] = hyperCube[i].first + (hyperCube[i].second - hyperCube[i].first)*x[i];
+  }
+
+  int result = function(xi,f);
+
+  for(i=0; i<*ndim; ++i)
+	  f[i] *= jacobian;
+
+  return result;
+}
+ 
+template<auto *F, size_t ndim, size_t nComp>
+class Cuba{
+private:
+  std::array<std::pair<cubareal,cubareal>,ndim> hyperCube;
+
+  int hasFailed;
+
+  std::array<cubareal,nComp> integrals;
+  std::array<cubareal,nComp> errorEstimates;
+  std::array<cubareal,nComp> probabilities;
+
+  std::mt19937 seed_generator;
+  std::uniform_int_distribution<> uniform_distribution;
+
+public:
+  Cuba(){
+    seed_generator = std::mt19937(std::random_device()());
+    uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
+
+    for( auto& limit : hyperCube ) limit = std::make_pair(0.0,1.0);
+  }
+
+  Cuba(std::array<std::pair<cubareal,cubareal>,ndim> _hyperCube){
+    seed_generator = std::mt19937(std::random_device()());
+    uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
+
+    hyperCube = _hyperCube;
+  }
+  struct Parameters{
+    size_t nvec;
+    double epsrel;
+    double epsabs;
+#ifdef _CUBA_VERBOSE
+    const int verbose = 3;
+#else
+#ifdef _VERBOSE
+    const int verbose = 1;
+#else
+    const int verbose = 0;
+#endif
+#endif
+    double epsabsg;
+    int last;
+    int seed;
+    int mineval;
+    int maxeval;
+    int nstart;
+    int nincrease;
+    int nbatch;
+    int gridno;
+    char* statefile; 
+    void* spin;
+    int nnew;
+    int nmin;
+    double flatness;
+    int key1;
+    int key2;
+    int key3;
+    int maxpass;
+    double border;
+    double maxchisq;
+    double mindeviation;
+    int ngiven;
+    int ldxgiven  = ndim;
+    double* xgiven;
+    int nextra;
+        int key;
+
+    Parameters(int _maxeval = 16777216 /*16^6*/, int _mineval = 16, double eps = 9.765625e-4 /*2^-10*/): 
+	nvec(1), epsrel(eps), epsabs(pow(eps,2)), last(4), seed(0),
+       	mineval(_mineval), maxeval(_maxeval), nstart(_mineval), nincrease(500), nbatch(1000), gridno(0), statefile(NULL),
+       	spin(NULL), nnew(1000), nmin(2), flatness(5.), key1(47), key2(1), key3(1), maxpass(5), border(0.), maxchisq(10.),
+       	mindeviation(.25), ngiven(0), ldxgiven(ndim), xgiven(NULL), nextra(0), key(0){
+
+ 
+	}
+  } parameters;
+  
+/*
+ *
+ * SUAVE
+ *
+ */
+ int suave_explicit(int (*function)(const int*, const cubareal[], const int*, cubareal[], void*), void *userdata,
+		    double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+    parameters.seed = uniform_distribution(seed_generator);
+    int nregions;
+
+    Suave(ndim, nComp, function, userdata, parameters.nvec,
+          parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last, parameters.seed,
+          parameters.mineval, parameters.maxeval, parameters.nnew, parameters.nmin, parameters.flatness,
+          parameters.statefile, &parameters.spin, &nregions, &stepsEvaluated, 
+	  &hasFailed, result, errorEstimate, probability);
+
+    return hasFailed;
+  }
+
+ int suave_result(double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+	 return suave_explicit(cFunction<F,hyperCube>,NULL,result,errorEstimate,probability,stepsEvaluated);
+ }
+
+ int suave_result(std::array<double,nComp>& result, std::array<double,nComp>& errorEstimate, std::array<double,nComp>& probability, int& stepsEvaluated){
+	 return suave_result(result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+ }
+
+ /*
+  *
+  * DIVONNE
+  *
+  */
+
+ int divonne_explicit(int (*function)(const int*, const cubareal[], const int*, cubareal[], void*), void *userdata,
+ 		      void (*peakfinder)(const int *, const double [], int *, double [], void*),
+		      double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+    parameters.seed = uniform_distribution(seed_generator);
+    int nregions;
+
+    Divonne(ndim, nComp, function, userdata, parameters.nvec,
+            parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last, parameters.seed,
+            parameters.mineval, parameters.maxeval, parameters.key1, parameters.key2, parameters.key3,
+	    parameters.maxpass, parameters.border, parameters.maxchisq, parameters.mindeviation,
+	    parameters.ngiven, parameters.ldxgiven, parameters.xgiven, parameters.nextra, peakfinder, 
+            parameters.statefile, &parameters.spin, &nregions, &stepsEvaluated, 
+	    &hasFailed, result, errorEstimate, probability);
+
+    return hasFailed;
+  }
+
+ int divonne_result(double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+	 return divonne_explicit(cFunction<F,hyperCube>,NULL,NULL,result,errorEstimate,probability,stepsEvaluated);
+ }
+
+ int divonne_result(std::array<double,nComp>& result, std::array<double,nComp>& errorEstimate, std::array<double,nComp>& probability, int& stepsEvaluated){
+	 return divonne_result(result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+ }
+
+
+
+}; //end of class Cuba
+
+} //end of namespace CUBA
+} //end of namespace celerium
+
+#endif
