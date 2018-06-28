@@ -42,5 +42,6 @@ AC_CONFIG_FILES([Makefile
 		 tests/AtomicWaveFunction/Makefile
 		 tests/Interpolator/Makefile
 		 tests/SphericalHarmonics/Makefile
-		 tests/CubaWrapper/Makefile])
+		 tests/CubaWrapper/Makefile
+		 tests/GslWrapper/Makefile])
 AC_OUTPUT
