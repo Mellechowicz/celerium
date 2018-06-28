@@ -20,13 +20,20 @@ class OrbitalClass {
   // Initializes an orbital class with guven radial wave function,
   // eigenenergy and angular orbtial momentum. All values
   // m = -l, .. l are considered active bu default.
-  OrbitalClass(const RadialWF &radial_wf, double energy, int l) {
+  OrbitalClass(const RadialWF &radial_wf, double energy, int n, int l) {
     
     if (l < 0) throw std::invalid_argument("celerium::OrbitalClass: \
  Attempted to construct Orbital object with negative l.");
+
+    if (n < 1) throw std::invalid_argument("celerium::OrbitalClass: \
+ Attempted to construct Orbital object with n < 1.");
+
+    if (n < l + 1) throw std::invalid_argument("celerium::OrbitalClass: \
+ Attempted to construct Orbital object with n < l + 1.");
     
     this->radial_wf = radial_wf;
     this-> energy = energy;
+    this-> n = n;
     this->l = l;
 
     for (int m = -l; m <= l; ++m) this->active_m_values.push_back(m);
@@ -36,14 +43,21 @@ class OrbitalClass {
   // eigenenergy and angular orbtial momentum. Only
   // provided m values are considered active;
   OrbitalClass(const RadialWF &radial_wf, double energy,
-               int l, std::vector<int> active_m_values) {
+               int n, int l, std::vector<int> active_m_values) {
     
     if (l < 0) throw std::invalid_argument("celerium::OrbitalClass: \
  Attempted to construct Orbital object with negative l.");
+
+    if (n < 1) throw std::invalid_argument("celerium::OrbitalClass: \
+ Attempted to construct Orbital object with n < 1.");
+
+    if (n < l + 1) throw std::invalid_argument("celerium::OrbitalClass: \
+ Attempted to construct Orbital object with n < l + 1.");
     
     this->radial_wf = radial_wf;
     this-> energy = energy;
     this->l = l;
+    this->n = n;
     this->SetActiveMValues(active_m_values);
   }
 
@@ -55,13 +69,22 @@ class OrbitalClass {
 
   void SetEnergy(double energy) {this->energy = energy;}
 
-  void SetL(int l) {
+  void SetNL(int n, int l) {
 
-    if (l < 0) throw std::invalid_argument("celerium::OrbitalClass::SetL \
- Attempted to set negative l.");
+    if (l < 0) throw std::invalid_argument("celerium::OrbitalClass::SetNL: \
+ Attempted set quantum numbers with negative l.");
+
+    if (n < 1) throw std::invalid_argument("celerium::OrbitalClass::SetNL: \
+ Attempted set quantum numbers with n < 1.");
+
+    if (n < l + 1) throw std::invalid_argument("celerium::OrbitalClass::SetNL: \
+ Attempted set quantum numbers with n < l + 1.");
     
     this->l = l;
+    this->n = n;
   }
+
+  
   
   // Sets active m values. Autmatically checks if |m| < l and
   // removes duplicates.
@@ -82,6 +105,7 @@ SetActiveMValues Active m values must satisfy |m| < l.");
   // Getters.
   
   int GetL() const {return this->l;}
+  int GetN() const {return this->n;}
 
   double GetEnergy() const {return this->energy;}
 
@@ -112,6 +136,7 @@ SetActiveMValues Active m values must satisfy |m| < l.");
  private:
   
   RadialWF radial_wf;
+  int n;
   int l;
   double energy;
   std::vector<int> active_m_values;

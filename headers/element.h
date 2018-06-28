@@ -57,15 +57,27 @@ class Element {
     for (size_t i  = 0; i < x.size(); ++i) samples.push_back({x[i], y[i]});
     this->radial_potential = Interpolator(samples);
   }
+
+
+  void AddOrbitalClass(int n, int l,
+                       const std::vector<int> &active_m_values,
+                       const wf_solver_params &params,
+                       const std::vector<double> &mesh) {
+
+    if (mesh.size() == 0)
+      throw std::invalid_argument("celerium::Element::AddOrbitalClass: \
+mesh cannot be empty.");
+
+    double r_max = mesh.front();
+    for (auto r : mesh) {
+
+      if (r < 0)
+        throw std::invalid_argument("celerium::Element::AddOrbitalClass: \
+mesh can contain only non-negative numbers.");
+      
+        if (r > r_max) r_max = r;
+      }
     
-  int AddOrbitalClass(int n, int l,
-                      const std::vector<int> &active_m_values,
-                      const wf_solver_params &params) {
-    
-    double r_max = this->radial_potential.GetSamples().front().x;
-    for (auto s : this->radial_potential.GetSamples()) {
-      if (s.x > r_max) r_max = s.x;
-    }                  
     
     std::string logs;
     eigenstate_struct eigenstate;
@@ -82,19 +94,17 @@ class Element {
     if (status == 0) {
 
       Interpolator interp_result(eigenstate.wave_function);
-      std::vector<sample_struct> new_samples;
+      std::vector<sample_struct> mesh_samples;
       
-      for (const auto &s : this->radial_potential.GetSamples()) {
-        new_samples.push_back({s.x, interp_result(s.x)});
-      }
+      for (auto r : mesh) 
+        mesh_samples.push_back({r, interp_result(r)});
 
-      Interpolator wave_function_original_mesh_interp(new_samples);
+      Interpolator wave_function_original_mesh_interp(mesh_samples);
       OrbitalClass orbital_class(wave_function_original_mesh_interp,
                                  eigenstate.energy,
-                                 l, active_m_values);
+                                 n, l, active_m_values);
 
       this->orbital_classes.push_back(orbital_class);
-      return 0;
     }
     else {
 
@@ -104,7 +114,27 @@ class Element {
       throw std::runtime_error("celerium::Element::AddOrbital: Schroedinger \
 equation solver did not converge (adjust the solver settings).");
     }
-    return -1;
+ 
+  }
+
+  void AddOrbitalClass(int n, int l,
+                       const wf_solver_params &params,
+                       const std::vector<double> &mesh) {
+    std::vector<int> active_m_values;
+    for (int m = -l; m <= l; ++m) active_m_values.push_back(m);
+    this->AddOrbitalClass(n, l, active_m_values, params, mesh);
+  }
+  
+
+
+  void AddOrbitalClass(int n, int l,
+                      const std::vector<int> &active_m_values,
+                      const wf_solver_params &params) {
+
+    std::vector<sample_struct> samples = this->radial_potential.GetSamples();
+    std::vector<double> mesh;
+    for (const auto &s : samples) mesh.push_back(s.x);
+    this->AddOrbitalClass(n, l, active_m_values, params, mesh);
   }
 
   void AddOrbitalClass(int n, int l, const wf_solver_params &params) {

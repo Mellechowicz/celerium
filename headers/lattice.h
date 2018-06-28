@@ -4,16 +4,18 @@
 #include <orbital_class.h>
 #include <element.h>
 
+
 namespace celerium {
 
 
 struct lattice_site_t {
+  std::string name;
   size_t element_index;
   ArithmeticVector position;
 };
 
 
-template <class Element>
+template <class Element = Element<Interpolator, OrbitalClass<Interpolator>>>
 class ElementaryCell {
 
  public:
@@ -28,12 +30,17 @@ vectors must be linearly independent.");
 
     this->basis = basis;
   }
+  
 
-  void AddSite(Element &element,
-               ArithmeticVector position) {
-
+  void AddSite(const char *site_name,
+               Element &element,
+               const ArithmeticVector &site_position) {
+    
     lattice_site_t lattice_site;
-    lattice_site.position = position;
+    lattice_site.name = site_name;
+    lattice_site.position = site_position;
+
+    this->n_orbitals = 0;
     
     auto located_element = 
         std::find_if(this->elements.begin(),
@@ -60,22 +67,40 @@ vectors must be linearly independent.");
   }
 
   size_t NOrbitals() const {return this->n_orbitals;}
- 
+  size_t NSites() const {return this->lattice_sites.size();}
+
+
+  void EvaluatePotentials(ArithmeticVector &coords,
+                          std::vector<double> &result) {
+
+    result.resize(this->lattice_sites.size());
+
+    double r;
+    
+    for (size_t i = 0; i < this->lattice_sites.size(); ++i) {
+      
+      r = (coords - this->lattice_sites[i].position).length();
+      
+      result[i] =
+          this->elements[this->lattice_sites[i].element_index].GetRadialPotential()(r);
+    }
+  }
+
+
   void EvaluateOrbitals(ArithmeticVector &coords,
                         std::vector<double> &result) {
 
     result.resize(this->n_orbitals);
-
+    
     size_t i = 0;
     double radial_wf_value;
 
     for (auto &lattice_site : this->lattice_sites) {
-      std::cout << "a\n";
-      for (const auto &orbital_class :
+      for (auto &orbital_class :
                this->elements[lattice_site.element_index].GetOrbitalClasses()) {
         double r = (coords - lattice_site.position).length();
         radial_wf_value = orbital_class.GetRadialWF()(r);
-        for (int m : orbital_class.GetActiveMValues()) {      
+        for (int m : orbital_class.GetActiveMValues()) {
           result[i] = radial_wf_value *
                       RealSphericalHarmonic(orbital_class.GetL(),
                                             m,
@@ -91,6 +116,48 @@ vectors must be linearly independent.");
 
   void EvaluateLaplacians(const ArithmeticVector &coords,
                           std::vector<double> result);
+
+  
+  double CellPotential(ArithmeticVector coords, double cutoff_radius) {
+
+    std::array<double, 3> proj;
+
+    int n0 = abs(ceil(cutoff_radius / this->real_space_basis[0].length()));
+    int n1 = abs(ceil(cutoff_radius / this->real_space_basis[1].length()));
+    int n2 = abs(ceil(cutoff_radius / this->real_space_basis[2].length()));
+
+    ArithmeticVector r_vec({0.0, 0.0, 0.0});
+    
+    double result = 0.0;
+    for (const auto &lattice_site : this->lattice_sites) {
+
+
+      for (size_t i = 0; i < 3; ++i) {
+        proj[i] = ((coords-lattice_site.position)*this->real_space_basis[i]) /
+                  std::pow(this->real_space_basis[i].length(), 2);
+        proj[i] = std::remainder(proj[i], 1.0);
+      }
+      
+      for (int i0 = - n0; i0 <= n0; ++i0) {
+        for (int i1 = - n1; i1 <= n1; ++i1) {
+          for (int i2 = - n2; i2 <= n2; ++i2) {
+ 
+            r_vec = (proj[0]+i0)*this->real_space_basis[0] +
+                    (proj[1]+i1)*this->real_space_basis[1] +
+                    (proj[2]+i2)*this->real_space_basis[2];
+
+            if (r_vec.length() < cutoff_radius)            
+              result += this->elements[lattice_site.element_index].GetRadialPotential(r_vec.length());
+          }
+        }
+      }
+    }
+
+    return result;
+
+    
+  }
+
   
 
  private:

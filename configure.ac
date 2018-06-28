@@ -46,3 +46,5 @@ AC_CONFIG_FILES([Makefile
 		 tests/Element/Makefile
 		 tests/Lattice/Makefile
 		 tests/CubaWrapper/Makefile])
+
+AC_OUTPUT

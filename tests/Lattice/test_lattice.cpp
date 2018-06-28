@@ -1,44 +1,62 @@
-#include <lattice.h>
 #include <iomanip>      // std::setprecision
-#include <functional>
-
-#define bohr_radius 0.529177249
+#include <lattice.h>
+#include <potential.h>
 
 using namespace celerium;
 
 int main(int argc, char *argv[])
 {
 
-  // Manually define Coulomb potential.
-  std::function coulomb_potential = [](double r) -> double {return -14.399645352/r;};
+  // Load pseudopotential.
+  LocalPotential potential_cr("../Potential/Cr.UPF");
 
-  // Manually define radial wave function of the Hydrogen 2p oritals.
-  std::function radial_wf_2p = [](double r) {
-    double c1 = 1.0/pow(2*bohr_radius, 3.0/2.0)/sqrt(3.0)/bohr_radius;
-    double c2 = 0.5/bohr_radius;    
-    return c1*r*exp(-c2*r);
-  };
+  // Initialize element using chromium pseudopotential.
+  Element chromium("Cr", potential_cr);
+
+  // Set up the solver.
+  wf_solver_params params;
+  params.r_min = 1e-6;
+  params.energy_step = 0.01;
+  params.matrix_dim = 2000;
+  params.grid_size = 10000;
+  params.matching_index = 5000;
+  params.energy_accuracy = 1e-8;
+
+  // Add 3d-like orbitals. Note that mesh is not passed as an argument here
+  // as it is provided by LocalPotential object.
+  chromium.AddOrbitalClass(3,         // n = 3
+                           2,         // l = 2
+                           params);   // solver parameters
+
+  // Add 4s-like orbitals.
+  chromium.AddOrbitalClass(4,         // n = 4
+                           0,         // l = 0
+                           params);   // solver parameters
+
+  ElementaryCell elementary_cell;
+
+  elementary_cell.AddSite("Ce(1)", chromium, {{0, 0, 0}});
   
-  OrbitalClass hydrogen_2p(radial_wf_2p, -13.605693009/2/2, 1);
 
-  std::vector orbitals ({hydrogen_2p});
-  
-  Element hydrogen("H", coulomb_potential, orbitals);
-
-  ElementaryCell<decltype(hydrogen)> lattice;
-
-
-  lattice.AddSite(hydrogen, {{0.13, 0.42, 0.3}});
-  lattice.AddSite(hydrogen, {{0.13, 0.42, 0.35}});
-
-  std::cout << "\n\n" << lattice.NOrbitals() << "\n\n";
 
   std::vector<double> result;
-  //lattice.EvaluateOrbitals({{0.5, 0.5, 0.5}}, result);
 
+  ArithmeticVector v({20.1, 0.2, 0.4});
+  elementary_cell.EvaluateOrbitals(v, result);
+
+  for (size_t i  = 0; i < elementary_cell.NOrbitals(); ++i) {
+    std::cout << result[i] << "\n";
+  }
+
+  elementary_cell.EvaluatePotentials(v, result);
+
+
+  
   std::cout << "\n\n";
-  for (auto r : result) std::cout << r << " ";
-  std::cout << "\n\n";
+  
+  for (size_t i  = 0; i < elementary_cell.NSites(); ++i) {
+    std::cout << result[i] << "\n";
+  }
   
   return 0;
 }
