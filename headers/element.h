@@ -44,9 +44,11 @@ class Element {
 
   
   Element(const char *element_name,
-          LocalPotential &potential) {
+          LocalPotential &potential,
+          const std::initializer_list<OrbitalClass> &orbital_classes) {
     this->name = element_name;
     this->SetRadialPotential(potential);
+    this->orbital_classes = orbital_classes;
   }
   
   void SetRadialPotential(LocalPotential &potential) {

@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
   LocalPotential potential_cr("../Potential/Cr.UPF");
 
   // Initialize element using chromium pseudopotential.
-  Element chromium("Cr", potential_cr);
+  Element chromium("Cr", potential_cr, {});
 
   // Set up the solver.
   wf_solver_params params;

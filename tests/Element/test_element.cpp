@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
   LocalPotential potential_cr("../Potential/Cr.UPF");
 
   // Initialize element using chromium pseudopotential.
-  Element chromium("Cr", potential_cr);
+  Element chromium("Cr", potential_cr, {});
   
   // Add 3d-like orbitals. Note that mesh is not passed as an argument here
   // as it is provided by LocalPotential object.
