@@ -3,9 +3,10 @@
 
 #include <vector>
 #include <string>
-#include "wfsolver_interface.h"
+#include "wfsolver.h"
 #include "potential.h"
 #include "orbital_class.h"
+#include "interpolator.h"
 
 namespace celerium {
 
@@ -59,27 +60,25 @@ class Element {
     for (size_t i  = 0; i < x.size(); ++i) samples.push_back({x[i], y[i]});
     this->radial_potential = Interpolator(samples);
   }
-
-
+  
   void AddOrbitalClass(int n, int l,
                        const std::vector<int> &active_m_values,
-                       const wf_solver_params &params,
-                       const std::vector<double> &mesh) {
+                       const wf_solver_params_struct &params,
+                       const std::vector<double> &result_mesh) {
 
-    if (mesh.size() == 0)
+    if (result_mesh.size() == 0)
       throw std::invalid_argument("celerium::Element::AddOrbitalClass: \
 mesh cannot be empty.");
 
-    double r_max = mesh.front();
-    for (auto r : mesh) {
+    double r_max = result_mesh.front();
+    for (auto r : result_mesh) {
 
       if (r < 0)
         throw std::invalid_argument("celerium::Element::AddOrbitalClass: \
-mesh can contain only non-negative numbers.");
+mesh may contain only non-negative numbers.");
       
         if (r > r_max) r_max = r;
       }
-    
     
     std::string logs;
     eigenstate_struct eigenstate;
@@ -98,7 +97,7 @@ mesh can contain only non-negative numbers.");
       Interpolator interp_result(eigenstate.wave_function);
       std::vector<sample_struct> mesh_samples;
       
-      for (auto r : mesh) 
+      for (auto r : result_mesh) 
         mesh_samples.push_back({r, interp_result(r)});
 
       Interpolator wave_function_original_mesh_interp(mesh_samples);
@@ -120,18 +119,31 @@ equation solver did not converge (adjust the solver settings).");
   }
 
   void AddOrbitalClass(int n, int l,
-                       const wf_solver_params &params,
-                       const std::vector<double> &mesh) {
-    std::vector<int> active_m_values;
-    for (int m = -l; m <= l; ++m) active_m_values.push_back(m);
-    this->AddOrbitalClass(n, l, active_m_values, params, mesh);
+                       const std::vector<int> &active_m_values,
+                       const std::vector<double> &result_mesh) {
+
+    wf_solver_params_struct params;
+    AddOrbitalClass(n, l, active_m_values, params, result_mesh);
   }
   
+  void AddOrbitalClass(int n, int l,
+                       const wf_solver_params_struct &params,
+                       const std::vector<double> &result_mesh) {
+    std::vector<int> active_m_values;
+    for (int m = -l; m <= l; ++m) active_m_values.push_back(m);
+    this->AddOrbitalClass(n, l, active_m_values, params, result_mesh);
+  }
 
+  void AddOrbitalClass(int n, int l,
+                       const std::vector<double> &result_mesh) {
+    std::vector<int> active_m_values;
+    for (int m = -l; m <= l; ++m) active_m_values.push_back(m);
+    this->AddOrbitalClass(n, l, active_m_values, result_mesh);
+  }
 
   void AddOrbitalClass(int n, int l,
                       const std::vector<int> &active_m_values,
-                      const wf_solver_params &params) {
+                      const wf_solver_params_struct &params) {
 
     std::vector<sample_struct> samples = this->radial_potential.GetSamples();
     std::vector<double> mesh;
@@ -139,15 +151,28 @@ equation solver did not converge (adjust the solver settings).");
     this->AddOrbitalClass(n, l, active_m_values, params, mesh);
   }
 
-  void AddOrbitalClass(int n, int l, const wf_solver_params &params) {
+  void AddOrbitalClass(int n, int l,
+                      const std::vector<int> &active_m_values) {
+
+    wf_solver_params_struct params;
+    this->AddOrbitalClass(n, l, active_m_values, params);
+  }
+
+
+  void AddOrbitalClass(int n, int l, const wf_solver_params_struct &params) {
     std::vector<int> active_m_values;
     for (int m = -l; m <= l; ++m) active_m_values.push_back(m);
     this->AddOrbitalClass(n, l, active_m_values, params);
   }
+
+  void AddOrbitalClass(int n, int l) {
+    wf_solver_params_struct params;
+    this->AddOrbitalClass(n, l, params);
+  }
   
   // Setters.
 
-  void SetRadialPotential(RadialPotential &radial_potential) {
+  void SetRadialPotential(const RadialPotential &radial_potential) {
     this->radial_potential = radial_potential;
   }
 
@@ -163,130 +188,23 @@ equation solver did not converge (adjust the solver settings).");
   
   const std::string &GetName() const {return this->name;}
 
-  RadialPotential &GetRadialPotential(){return this->radial_potential;}
+  const RadialPotential &GetRadialPotential() const {
+    return this->radial_potential;
+  }
 
-  std::vector<OrbitalClass> &GetOrbitalClasses() {
+  const std::vector<OrbitalClass> &GetOrbitalClasses() const {
     return this->orbital_classes;
   }
 
  private:
 
-  std::string name;
   RadialPotential radial_potential;
+  std::string name;
   std::vector<OrbitalClass> orbital_classes;
   
 };
 
 
-
-
-
 }  // end namespace celerium
 
-
-
-
-
-
-
-/*
-
-template <class RadialWaveFunction>
-struct extended_radial_wf {
-  RadialWaveFunction radial_wf;
-  int l;
-  double energy;
-};
-
-
-
-template <class RadialPotential, class RadialWaveFunction>
-class Element {
-
- public:
-
-  Element() {};
-  
-  Element(const std::string &name, const RadialPotential &radial_potential) {
-    this->name = name;
-    this->radial_potential = radial_potential;
-  }
-  
-  void SetName(const std::string &name) {this->name = name;}
-
-  void SetRadialPotential(const RadialPotential &radial_potential) {
-    this->radial_potential = radial_potential;
-  }
-
-  void AddRadialWaveFunction(RadialWaveFunction radial_wave_function,
-                             int l,
-                             double energy) {
-    
-    if (l < 0) throw std::invalid_argument("celerium::Element::AddRadialWaveFunction:\
- l must by greater of equal to zero.");
-
-    auto located_wf = std::find_if(this->extended_radial_wfs.begin(),
-                                   this->extended_radial_wfs.end(),
-                                   [&](extended_radial_wf<RadialWaveFunction>
-                                       tested_extended_wf) {
-                                     return tested_extended_wf.l == l;
-                                   });
-
-    if (located_wf != this->extended_radial_wfs.end())
-      throw std::invalid_argument("celerium::Element::AddWaveFunction:\
- attempted to add two wave functions corresponding to the same l.");
-
-    this->extended_radial_wfs.push_back({radial_wave_function, l, energy});
-  }
-
-  double GetWaveFunction(ArithmeticVector &coords,
-                         size_t radial_wf_index,
-                         int m) {
-
-    auto &extended_radial_wf = this->extended_radial_wfs[radial_wf_index];
-    
-    if (abs(m) > extended_radial_wf.l)
-      throw std::invalid_argument("celerium::Element::GetWaveFunction\
- |m| must not exceed l.");    
-
-    double result = extended_radial_wf.radial_wf(coords.length());
-    result *= RealSphericalHarmonic(extended_radial_wf.l, m,
-                                    coords[0],
-                                    coords[1],
-                                    coords[2]);
-    return result;
-  }
-
-  const std::string &GetName() const {return this->name;}
-
-  double GetRadialPotential(double r) {
-    return this->radial_potential(r);
-  }
-
-  const std::vector<extended_radial_wf<RadialWaveFunction>> &
-  GetRadialWaveFunctions() const {
-    return this->extended_radial_wfs;
-  }
-  
- private:
-  std::string name;
-  RadialPotential radial_potential;
-  std::vector<extended_radial_wf<RadialWaveFunction>> extended_radial_wfs;
-};
-
-
-using ElementI = Element<Interpolator, Interpolator>;
-
-
-using ElementF = Element<std::function<double(double)>,
-                         std::function<double(double)>>;
-
-
-
-
-} // end namespace celerium
-
-*/
-
 #endif /* ELEMENT_H */
-

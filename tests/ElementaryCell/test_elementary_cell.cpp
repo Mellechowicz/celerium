@@ -1,5 +1,5 @@
 #include <iomanip>      // std::setprecision
-#include <lattice.h>
+#include <elementary_cell.h>
 #include <potential.h>
 
 using namespace celerium;
@@ -13,28 +13,17 @@ int main(int argc, char *argv[])
   // Initialize element using chromium pseudopotential.
   Element chromium("Cr", potential_cr, {});
 
-  // Set up the solver.
-  wf_solver_params params;
-  params.r_min = 1e-6;
-  params.energy_step = 0.01;
-  params.matrix_dim = 2000;
-  params.grid_size = 10000;
-  params.matching_index = 5000;
-  params.energy_accuracy = 1e-8;
-
   // Add 3d-like orbitals. Note that mesh is not passed as an argument here
-  // as it is provided by LocalPotential object.
+  // as it is provided by LocalPotential object. Also, solver parameters
+  // are not specified (default values are used).
   chromium.AddOrbitalClass(3,         // n = 3
-                           2,         // l = 2
-                           params);   // solver parameters
-
+                           2);        // l = 2
+                           
   // Add 4s-like orbitals.
   chromium.AddOrbitalClass(4,         // n = 4
-                           0,         // l = 0
-                           params);   // solver parameters
+                           0);        // l = 0
 
   ElementaryCell elementary_cell;
-
   elementary_cell.AddSite("Ce(1)", chromium, {{0, 0, 0}});
   
 
@@ -60,3 +49,4 @@ int main(int argc, char *argv[])
   
   return 0;
 }
+

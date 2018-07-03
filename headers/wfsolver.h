@@ -23,15 +23,25 @@ namespace celerium {
 
 typedef std::function<double(double)> potential_t;
 
+struct wf_solver_params_struct {
+  double r_min = 1e-6;
+  double energy_step = 0.01;
+  size_t matrix_dim = 3000;
+  size_t grid_size = 10000;
+  size_t matching_index = 5000;
+  double energy_accuracy = 1e-8;
+};
+
 struct eigenstate_struct {
   double energy;
   double energy_error;
-  size_t nodes;
+  int nodes;
   std::vector<sample_struct> wave_function;
 };
 
-int SolveRadialSchroedingerEqn(potential_t potential,
-                                size_t l,
+template <class Potential>
+int SolveRadialSchroedingerEqn(Potential potential,
+                                int l,
                                 double r_min,
                                 double r_max,
                                 double initial_energy,
@@ -41,8 +51,9 @@ int SolveRadialSchroedingerEqn(potential_t potential,
                                 double matching_accuracy,
                                 eigenstate_struct &eigenstate);
 
+template <class Potential>
 void FindEigenvalueCandidates(
-    potential_t potential,
+    Potential potential,
     size_t l,
     double r_min,
     double r_max,
@@ -50,10 +61,10 @@ void FindEigenvalueCandidates(
     std::vector<double> &eigenvalue_candidates);
 
 
-
-int FindEigenstate(potential_t potential,
-                   size_t n,
-                   size_t l,
+template <class Potential>
+int FindEigenstate(Potential potential,
+                   int n,
+                   int l,
                    double r_min,
                    double r_max,
                    size_t matrix_dim,
@@ -63,6 +74,74 @@ int FindEigenstate(potential_t potential,
                    double eigenvalue_accuracy,
                    eigenstate_struct &eigenstate,
                    std::string &log);
+
+
+class WFSolver {
+ public:
+
+  int GetEigenstate(int n, int l,
+                     const std::vector<sample_struct> &potential,
+                     const std::vector<double> &result_mesh,
+                     eigenstate_struct &eigenstate) {
+
+    if (potential.size() == 0)
+      throw std::invalid_argument("celerium::WFSolver::GetEigenstate: potential \
+must not be empty.");
+    
+    double r_max = potential.front().x;
+    for (auto s : potential)
+      if (s.x > r_max) r_max = s.x;
+
+    Interpolator interp(potential);
+    
+    int status = FindEigenstate(interp,
+                                n,
+                                l,
+                                this->params.r_min,
+                                r_max,
+                                this->params.matrix_dim,
+                                this->params.energy_step,
+                                this->params.grid_size,
+                                this->params.matching_index,
+                                this->params.energy_accuracy,
+                                eigenstate,
+                                this->logs);
+
+    Interpolator interp_wf(eigenstate.wave_function);
+
+    eigenstate.wave_function.clear();
+    
+    for (auto r : result_mesh)
+      eigenstate.wave_function.push_back({r, interp_wf(r)});
+    
+    return status;
+  }
+  
+
+  int GetEigenstate(int n, int l,
+                     const std::vector<double> &potential_mesh,
+                     const std::vector<double> &potential_values,
+                     const std::vector<double> &result_mesh,
+                    eigenstate_struct &eigenstate) {
+
+    std::vector<sample_struct> potential;
+
+    for (size_t i = 0; i < potential_mesh.size(); ++i)
+      potential.push_back({potential_mesh[i], potential_values[i]});
+    
+    return GetEigenstate(n, l, potential, result_mesh, eigenstate);
+  }
+
+  const std::string &GetLogs() {return this->logs;}
+
+  wf_solver_params_struct params;
+
+ private:
+    std::string logs;
+};
+
+  
+
 
 // Include sources
 #include "../lib/wfsolver.cpp"

@@ -10,8 +10,8 @@ Interpolator::Interpolator() {
 
 
 Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
-  double x [samples.size()];
-  double y [samples.size()];
+  std::vector<double> x (samples.size());
+  std::vector<double> y (samples.size());
 
   this->x_max = 0;
   this->x_min = 0;
@@ -25,17 +25,19 @@ Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
     
   this->acc = gsl_interp_accel_alloc();
   this->spline = gsl_spline_alloc(gsl_interp_cspline, samples.size());
-  gsl_spline_init(spline, x, y, samples.size());
+  gsl_spline_init(spline, x.data(), y.data(), samples.size());
   this->t = gsl_interp_cspline;
   this->samples = samples;
+
+  
 }
 
 
 Interpolator::Interpolator(const std::vector<sample_struct> &samples,
                            const gsl_interp_type *t) {
   
-  double x [samples.size()];
-  double y [samples.size()];
+  std::vector<double> x (samples.size());
+  std::vector<double> y (samples.size());
 
   this->x_max = 0;
   this->x_min = 0;
@@ -49,7 +51,7 @@ Interpolator::Interpolator(const std::vector<sample_struct> &samples,
 
   this->acc = gsl_interp_accel_alloc ();
   this->spline = gsl_spline_alloc (t, samples.size());
-  gsl_spline_init (spline, x, y, samples.size());
+  gsl_spline_init (spline, x.data(), y.data(), samples.size());
   this->t = t;
   this->samples = samples;
 }
@@ -61,8 +63,8 @@ Interpolator::Interpolator(const Interpolator &interp) {
   this->x_max = interp.x_max;
   this->x_min = interp.x_min;
   
-  double x [this->samples.size()];
-  double y [this->samples.size()];
+  std::vector<double> x (this->samples.size());
+  std::vector<double> y (this->samples.size());
   
   for (size_t i = 0; i < this->samples.size(); ++i) {
     x[i] = this->samples[i].x;
@@ -71,7 +73,7 @@ Interpolator::Interpolator(const Interpolator &interp) {
   
   this->acc = gsl_interp_accel_alloc ();
   this->spline = gsl_spline_alloc (this->t, this->samples.size());
-  gsl_spline_init (this->spline, x, y, this->samples.size());
+  gsl_spline_init (this->spline, x.data(), y.data(), this->samples.size());
 }
 
 
@@ -94,8 +96,8 @@ Interpolator::~Interpolator() {
 }
 
 Interpolator &Interpolator::operator=(const Interpolator &rhs) {
-  double x [rhs.samples.size()];
-  double y [rhs.samples.size()];
+  std::vector<double> x (rhs.samples.size());
+  std::vector<double> y (rhs.samples.size());
   
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
@@ -112,7 +114,7 @@ Interpolator &Interpolator::operator=(const Interpolator &rhs) {
 
   this->acc = gsl_interp_accel_alloc();
   this->spline = gsl_spline_alloc(gsl_interp_cspline, rhs.samples.size());
-  gsl_spline_init(spline, x, y, rhs.samples.size());
+  gsl_spline_init(spline, x.data(), y.data(), rhs.samples.size());
   this->t = rhs.t;
   this->samples = rhs.samples;
   return *this;
@@ -125,8 +127,8 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
 
-  double x [samples.size()];
-  double y [samples.size()];
+  std::vector<double> x (samples.size());
+  std::vector<double> y (samples.size());
 
   this->x_max = 0;
   this->x_min = 0;
@@ -140,7 +142,7 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
 
   this->acc = gsl_interp_accel_alloc ();
   this->spline = gsl_spline_alloc (gsl_interp_cspline, samples.size());
-  gsl_spline_init (spline, x, y, samples.size());
+  gsl_spline_init (spline, x.data(), y.data(), samples.size());
   this->t = gsl_interp_cspline;
   this->samples = samples;
 }
@@ -151,8 +153,8 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
     
-  double x [samples.size()];
-  double y [samples.size()];
+  std::vector<double> x (samples.size());
+  std::vector<double> y (samples.size());
 
   this->x_max = 0;
   this->x_min = 0;
@@ -166,7 +168,7 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
 
   this->acc = gsl_interp_accel_alloc ();
   this->spline = gsl_spline_alloc (t, samples.size());
-  gsl_spline_init (spline, x, y, samples.size());
+  gsl_spline_init (spline, x.data(), y.data(), samples.size());
   this->t = t;
   this->samples = samples;
   }

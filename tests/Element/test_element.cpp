@@ -67,23 +67,12 @@ int main(int argc, char *argv[])
 
   // Define the mesh over which the wave function will be sampled.
   // We need to do that as the std::function does not provide any mesh.
-  std::vector<double> mesh;
-  for (int i  = 0; i < 100; ++i) mesh.push_back(i*0.3);
+  std::vector<double> result_mesh;
+  for (int i  = 0; i < 100; ++i) result_mesh.push_back(i*0.3);
 
-  // Set up the solver.
-  wf_solver_params params;
-  params.r_min = 1e-6;
-  params.energy_step = 0.01;
-  params.matrix_dim = 2000;
-  params.grid_size = 10000;
-  params.matching_index = 5000;
-  params.energy_accuracy = 1e-8;
-  
-  hydrogen_numerical.AddOrbitalClass(2,        // n = 2
-                                     1,        // l = 1
-                                     params,   // solver parameters
-                                     mesh);    // wave function sampling mesh
-
+  hydrogen_numerical.AddOrbitalClass(2,               // n = 2
+                                     1,               // l = 1
+                                     result_mesh);    // wave function sampling mesh
 
   std::cout << "Values of wave functions along the " <<
       "selected axis for hydrogen 2p orbitals (USE CASE 2: manually defined " <<
@@ -114,18 +103,18 @@ int main(int argc, char *argv[])
   LocalPotential potential_cr("../Potential/Cr.UPF");
 
   // Initialize element using chromium pseudopotential.
+  // Do not add any orbitals manually.
   Element chromium("Cr", potential_cr, {});
   
   // Add 3d-like orbitals. Note that mesh is not passed as an argument here
   // as it is provided by LocalPotential object.
   chromium.AddOrbitalClass(3,         // n = 3
-                           2,         // l = 2
-                           params);   // solver parameters
+                           2);        // l = 2
+
 
   // Add 4s-like orbitals.
   chromium.AddOrbitalClass(4,         // n = 4
-                           0,         // l = 0
-                           params);   // solver parameters
+                           0);        // l = 0
   
   
   std::cout << "Values of wave functions along the " <<

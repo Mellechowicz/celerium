@@ -1,5 +1,5 @@
 #include "../../headers/potential.h"
-#include "../../headers/wfsolver_interface.h"
+#include "../../headers/wfsolver.h"
 #include <iomanip>
 
 using namespace celerium;
@@ -9,28 +9,20 @@ int main() {
   LocalPotential potential;
   potential.input("../Potential/Cr.UPF");
 
-  WFSolver<LocalPotential> solver;
+  WFSolver solver;
 
   double energy;
-  std::vector<double> wave_function;
 
-  wf_solver_params params;  
-  params.r_min = 1e-7;
-  params.energy_step = 0.01;
-  params.matrix_dim = 2000;
-  params.grid_size = 5000;
-  params.matching_index = 2500;
-  params.energy_accuracy = 1e-8;
+  eigenstate_struct eigenstate;
+  std::vector<double> mesh, values;
+
+  potential.get_mesh(mesh);
+  potential.get_local(values);
   
-  int status = solver.GetEigenstate(3, 1,
-                                    potential,
-                                    params,
-                                    wave_function,
-                                    energy);
-
+  int status = solver.GetEigenstate(3, 1, mesh, values, mesh, eigenstate);
 
   std::cout << "\nDetermination of the 3p-like state for Cr:";
-  std::cout << "\n\n" << solver.GetLog() << "\n\n";
+  std::cout << "\n\n" << solver.GetLogs() << "\n\n";
   
   if (status == 0) {
 
@@ -47,7 +39,7 @@ int main() {
     
     for (size_t i = 0; i < mesh.size(); ++i) {
       std::cout << mesh[i] << " " << potential_values[i]
-                << " " << wave_function[i] << "\n";
+                << " " << eigenstate.wave_function[i].y << "\n";
     }
 
   }
@@ -59,3 +51,4 @@ int main() {
   
   return 0;
 }
+

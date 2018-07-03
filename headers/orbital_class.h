@@ -83,8 +83,6 @@ class OrbitalClass {
     this->l = l;
     this->n = n;
   }
-
-  
   
   // Sets active m values. Autmatically checks if |m| < l and
   // removes duplicates.
@@ -105,11 +103,12 @@ SetActiveMValues Active m values must satisfy |m| < l.");
   // Getters.
   
   int GetL() const {return this->l;}
+
   int GetN() const {return this->n;}
 
   double GetEnergy() const {return this->energy;}
 
-  RadialWF &GetRadialWF() {return this->radial_wf;}
+  const RadialWF &GetRadialWF() const {return this->radial_wf;}
 
   const std::vector<int> &GetActiveMValues() const {
     return this->active_m_values;
@@ -120,12 +119,11 @@ SetActiveMValues Active m values must satisfy |m| < l.");
   // p_y, p_z, and p_x, respecitvely. Note that REAL spherical harmonics are
   // used in computation of the orbtials, see
   // https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
-  double Eval(ArithmeticVector coords, int m) {
+  double Eval(ArithmeticVector coords, int m) const {
 
     if (abs(m) > this->l)
       throw std::invalid_argument("celerium::OrbitalClass::Eval:\
  |m| must not exceed l.");    
-
     
     double result = this->radial_wf(coords.length());
     result *=

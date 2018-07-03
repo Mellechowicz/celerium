@@ -1,14 +1,12 @@
-#ifndef LATTICE_H
-#define LATTICE_H
+#ifndef UNIT_CELL_H
+#define UNIT_CELL_H
 
 #include <orbital_class.h>
 #include <element.h>
 
-
 namespace celerium {
 
-
-struct lattice_site_t {
+struct lattice_site_struct {
   std::string name;
   size_t element_index;
   ArithmeticVector position;
@@ -24,27 +22,25 @@ class ElementaryCell {
 
     double vol = fabs(basis[0]*(basis[1]^basis[2]));
     
-    if (vol < 1e-7)
+    if (vol < 1e-10)
       throw std::invalid_argument("ElementaryCell::SetBasis: Basis \
 vectors must be linearly independent.");
 
     this->basis = basis;
   }
   
-
   void AddSite(const char *site_name,
-               Element &element,
+               const Element &element,
                const ArithmeticVector &site_position) {
     
-    lattice_site_t lattice_site;
+    lattice_site_struct lattice_site;
     lattice_site.name = site_name;
     lattice_site.position = site_position;
 
     this->n_orbitals = 0;
     
     auto located_element = 
-        std::find_if(this->elements.begin(),
-                     this->elements.end(),
+        std::find_if(this->elements.begin(), this->elements.end(),
                      [&](Element &e) {
                        return e.GetName() == element.GetName();
                      });
@@ -70,7 +66,7 @@ vectors must be linearly independent.");
   size_t NSites() const {return this->lattice_sites.size();}
 
 
-  void EvaluatePotentials(ArithmeticVector &coords,
+  void EvaluatePotentials(const ArithmeticVector &coords,
                           std::vector<double> &result) {
 
     result.resize(this->lattice_sites.size());
@@ -80,14 +76,16 @@ vectors must be linearly independent.");
     for (size_t i = 0; i < this->lattice_sites.size(); ++i) {
       
       r = (coords - this->lattice_sites[i].position).length();
-      
-      result[i] =
-          this->elements[this->lattice_sites[i].element_index].GetRadialPotential()(r);
+
+      const Element &element =
+          this->elements[this->lattice_sites[i].element_index];
+
+      result[i] = element.GetRadialPotential()(r);
     }
   }
 
 
-  void EvaluateOrbitals(ArithmeticVector &coords,
+  void EvaluateOrbitals(const ArithmeticVector &coords,
                         std::vector<double> &result) {
 
     result.resize(this->n_orbitals);
@@ -95,8 +93,8 @@ vectors must be linearly independent.");
     size_t i = 0;
     double radial_wf_value;
 
-    for (auto &lattice_site : this->lattice_sites) {
-      for (auto &orbital_class :
+    for (const auto &lattice_site : this->lattice_sites) {
+      for (const auto &orbital_class :
                this->elements[lattice_site.element_index].GetOrbitalClasses()) {
         double r = (coords - lattice_site.position).length();
         radial_wf_value = orbital_class.GetRadialWF()(r);
@@ -115,7 +113,7 @@ vectors must be linearly independent.");
   }
 
   void EvaluateLaplacians(const ArithmeticVector &coords,
-                          std::vector<double> result);
+                          std::vector<double> &result);
 
   
   double CellPotential(ArithmeticVector coords, double cutoff_radius) {
@@ -162,7 +160,7 @@ vectors must be linearly independent.");
 
  private:
   size_t n_orbitals;
-  std::vector<lattice_site_t> lattice_sites;
+  std::vector<lattice_site_struct> lattice_sites;
   std::vector<Element> elements;
   std::array<ArithmeticVector, 3> basis;
 };
@@ -448,4 +446,4 @@ using LatticeF = Lattice<std::function<double(double)>,
 
 
 
-#endif /* LATTICE_H */
+#endif /* UNIT_CELL_H */

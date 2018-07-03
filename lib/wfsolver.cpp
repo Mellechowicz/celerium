@@ -28,10 +28,9 @@ double CalculateY2(double y0, double y1,
   return nominator/denominator;
 }
 
-
-
-int SolveRadialSchroedingerEqn(potential_t potential,
-                               size_t l,
+template <class Potential>
+int SolveRadialSchroedingerEqn(Potential potential,
+                               int l,
                                double r_min,
                                double r_max,
                                double initial_energy,
@@ -208,10 +207,10 @@ be smaller than grid_size - 3.");
   return -1;
 }
 
-
+template <class Potential>
 void FindEigenvalueCandidates(
-    potential_t potential,
-    size_t l,
+    Potential potential,
+    int l,
     double r_min,
     double r_max,
     size_t matrix_dim,
@@ -263,9 +262,10 @@ void FindEigenvalueCandidates(
   std::sort(eigenvalue_candidates.begin(), eigenvalue_candidates.end());
 }
 
-int FindEigenstate(potential_t potential,
-                   size_t n,
-                   size_t l,
+template <class Potential>
+int FindEigenstate(Potential potential,
+                   int n,
+                   int l,
                    double r_min,
                    double r_max,
                    size_t matrix_dim,

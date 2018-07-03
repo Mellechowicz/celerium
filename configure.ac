@@ -36,15 +36,14 @@ AC_CHECK_FUNCS([pow sqrt])
 
 AC_CONFIG_FILES([Makefile
 		 tests/ArithmeticVector/Makefile
-                 tests/WFSolverInterface/Makefile
+                 tests/WFSolver/Makefile
 		 tests/Potential/Makefile
 		 tests/PotentialAndWFSolver/Makefile
-		 tests/AtomicWaveFunction/Makefile
 		 tests/Interpolator/Makefile
 		 tests/SphericalHarmonics/Makefile
 		 tests/OrbitalClass/Makefile
 		 tests/Element/Makefile
-		 tests/Lattice/Makefile
+		 tests/ElementaryCell/Makefile
 		 tests/CubaWrapper/Makefile])
 
 AC_OUTPUT
