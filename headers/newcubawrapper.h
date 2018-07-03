@@ -48,18 +48,8 @@ private:
   double jacobian;
 
 public:
-  Cuba(int _maxeval = 100, int _mineval = 0, double _epsrel = 1.52587890625e-05 /*2^-16*/):
-    parameters(1, _maxeval,_mineval,_epsrel){ 
-    seed_generator = std::mt19937(std::random_device()());
-    uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
-    spin = NULL;
-
-    parameters.epsabs = _epsrel/64;
-
-  }
-
-  virtual ~Cuba(){
-  }
+  Cuba(int _maxeval = 100, int _mineval = 0, double _epsrel = 1.52587890625e-05 /*2^-16*/);
+  virtual ~Cuba();
 
   struct Parameters{
     int nDim;
@@ -126,9 +116,7 @@ public:
 	nDim(_nDim), nvec(1), epsrel(eps), epsabs(eps*0.015625 /**2^-6*/), seed(0),
        	mineval(_mineval), maxeval(_maxeval), nstart(static_cast<int>(sqrt(maxeval))), nincrease(100), nbatch(100), gridno(0), statefile(NULL),
        	nnew(1000), nmin(2), flatness(5.), key1(47), key2(1), key3(1), maxpass(5), border(0.), maxchisq(10.),
-       	mindeviation(.25), ngiven(0), ldxgiven(_nDim), xgiven(NULL), nextra(0), key(0){
- 
-	}
+       	mindeviation(.25), ngiven(0), ldxgiven(_nDim), xgiven(NULL), nextra(0), key(0){}
   } parameters;
   
 /*
@@ -138,23 +126,7 @@ public:
  */
 private:
  int suave_explicit(int (*function)(const int*, const double[], const int*, double[], void*), void *userdata,
-		    double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
-    parameters.seed = uniform_distribution(seed_generator);
-    int nregions;
-
-    Suave(parameters.nDim, parameters.nComp, function, userdata, parameters.nvec,
-          parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
-          parameters.mineval, parameters.maxeval, parameters.nnew, parameters.nmin, parameters.flatness,
-          parameters.statefile, NULL, &nregions, &stepsEvaluated, 
-	  &hasFailed, result, errorEstimate, probability);
-
-    for(int i=0; i<parameters.nComp; ++i){
-	    result[i]        *= jacobian;
-	    errorEstimate[i] *= jacobian;
-    }
-
-    return hasFailed;
-  }
+		    double result[], double errorEstimate[], double probability[], int& stepsEvaluated);
 
 public:
  template<typename Callable>
@@ -184,25 +156,7 @@ template<typename Callable, size_t NCOMP>
 
 private:
  int divonne_explicit(int (*function)(const int*, const double[], const int*, double[], void*), void *userdata,
-		    double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
-    parameters.seed = uniform_distribution(seed_generator);
-    int nregions;
-
-    Divonne(parameters.nDim, parameters.nComp, function, userdata, parameters.nvec,
-            parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
-            parameters.mineval, parameters.maxeval, parameters.key1, parameters.key2, parameters.key3,
-	    parameters.maxpass, parameters.border, parameters.maxchisq, parameters.mindeviation,
-	    parameters.ngiven, parameters.ldxgiven, parameters.xgiven, parameters.nextra, NULL, 
-            parameters.statefile, NULL, &nregions, &stepsEvaluated, 
-	    &hasFailed, result, errorEstimate, probability);
-
-    for(int i=0; i<parameters.nComp; ++i){
-	    result[i]        *= jacobian;
-	    errorEstimate[i] *= jacobian;
-    }
-
-    return hasFailed;
-  }
+		    double result[], double errorEstimate[], double probability[], int& stepsEvaluated);
 
 public:
  template<typename Callable>
@@ -222,6 +176,7 @@ template<typename Callable, size_t NCOMP>
  int divonne_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
 	return divonne_result<Callable>(F,_hyperCube,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
  }
+
 }; //end of class Cuba
 
 
