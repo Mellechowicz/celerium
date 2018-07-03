@@ -21,12 +21,12 @@ template<typename Callable>
 int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
 	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
 
-  auto function = static_cast<std::pair<Callable*,std::vector<std::pair<double,double>>>*>(userdata)->first;
-  auto hyperCube = static_cast<std::pair<Callable*,std::vector<std::pair<double,double>>>*>(userdata)->second;
+  auto function = static_cast<std::pair<Callable,std::vector<std::pair<double,double>>>*>(userdata)->first;
+  auto hyperCube = static_cast<std::pair<Callable,std::vector<std::pair<double,double>>>*>(userdata)->second;
+
   double *xi = new double[hyperCube.size()];
-  for(size_t i=0U; i<hyperCube.size(); ++i){
+  for(size_t i=0U; i<hyperCube.size(); ++i)
     xi[i] = hyperCube[i].first + (hyperCube[i].second - hyperCube[i].first)*x[i];
-  }
 
   int result = function(xi,f);
 
@@ -48,27 +48,14 @@ private:
   double jacobian;
 
 public:
-  Cuba(){
-    seed_generator = std::mt19937(std::random_device()());
-    uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
-    spin = NULL;
-
-    jacobian = 1.0;
-  }
-
-  Cuba(std::vector<std::pair<double,double>>& _hyperCube, int _maxeval, 
-       int _mineval = 0, double _epsrel = 1.52587890625e-05 /*2^-16*/):
-    parameters(_hyperCube.size(), _maxeval,_mineval,_epsrel){ 
-    hyperCube =  static_cast<void*>(&_hyperCube);
+  Cuba(int _maxeval = 100, int _mineval = 0, double _epsrel = 1.52587890625e-05 /*2^-16*/):
+    parameters(1, _maxeval,_mineval,_epsrel){ 
     seed_generator = std::mt19937(std::random_device()());
     uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
     spin = NULL;
 
     parameters.epsabs = _epsrel/64;
 
-    jacobian = 1.0;
-    for(const auto& limits : _hyperCube)
-      jacobian *= limits.second - limits.first;
   }
 
   virtual ~Cuba(){
@@ -171,19 +158,21 @@ private:
 
 public:
  template<typename Callable>
- int suave_result(Callable& F, std::vector<std::pair<double,double>>& _hyperCube, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+ int suave_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+	parameters.nDim = _hyperCube.size();
+
 	jacobian = 1.0;
 	for(const auto& limits : _hyperCube)
 	  jacobian *= limits.second - limits.first;
 	hyperCube = static_cast<void*>(&_hyperCube);
-	auto data = std::make_pair(*F,_hyperCube);
+	auto data = std::make_pair(F,_hyperCube);
 	auto output = suave_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
 	return output;
 
  }
 
 template<typename Callable, size_t NCOMP>
- int suave_result(Callable& F, std::vector<std::pair<double,double>>& _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
+ int suave_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
 	return suave_result<Callable>(F,_hyperCube,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
  }
 
@@ -191,24 +180,23 @@ template<typename Callable, size_t NCOMP>
   *
   * DIVONNE
   *
-  *
+  */
 
 private:
  int divonne_explicit(int (*function)(const int*, const double[], const int*, double[], void*), void *userdata,
- 		      void (*peakfinder)(const int *, const double [], int *, double [], void*),
-		      double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+		    double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
     parameters.seed = uniform_distribution(seed_generator);
-    int nregions=0;
+    int nregions;
 
     Divonne(parameters.nDim, parameters.nComp, function, userdata, parameters.nvec,
             parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
             parameters.mineval, parameters.maxeval, parameters.key1, parameters.key2, parameters.key3,
 	    parameters.maxpass, parameters.border, parameters.maxchisq, parameters.mindeviation,
-	    parameters.ngiven, parameters.ldxgiven, parameters.xgiven, parameters.nextra, peakfinder, 
+	    parameters.ngiven, parameters.ldxgiven, parameters.xgiven, parameters.nextra, NULL, 
             parameters.statefile, NULL, &nregions, &stepsEvaluated, 
 	    &hasFailed, result, errorEstimate, probability);
 
-    for(unsigned i=0; i<NCOMP; ++i){
+    for(int i=0; i<parameters.nComp; ++i){
 	    result[i]        *= jacobian;
 	    errorEstimate[i] *= jacobian;
     }
@@ -217,15 +205,23 @@ private:
   }
 
 public:
- int divonne_result(double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
-	 return divonne_explicit(cFunction<F,NDIM>,hyperCube,NULL,result,errorEstimate,probability,stepsEvaluated);
+ template<typename Callable>
+ int divonne_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+	parameters.nDim = _hyperCube.size();
+	jacobian = 1.0;
+	for(const auto& limits : _hyperCube)
+	  jacobian *= limits.second - limits.first;
+	hyperCube = static_cast<void*>(&_hyperCube);
+	auto data = std::make_pair(F,_hyperCube);
+	auto output = divonne_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
+	return output;
+
  }
 
- int divonne_result(std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
-	 return divonne_result(result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+template<typename Callable, size_t NCOMP>
+ int divonne_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
+	return divonne_result<Callable>(F,_hyperCube,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
  }
-
- */
 }; //end of class Cuba
 
 
