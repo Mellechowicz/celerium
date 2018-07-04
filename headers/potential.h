@@ -9,7 +9,9 @@
 #include <functional>
 #include <stdexcept>
 #include <algorithm>
+#include <numeric>
 #include <cmath>
+#include "constants.h"
 
 #ifdef _VERBOSE
   #include <chrono>
@@ -30,8 +32,13 @@ protected:
 	bool was_file_set;
 	stoT convert;
 
-	const double a0_to_A  = 5.2917721092e-1;
-	const double Ry_to_eV = 13.605693009;
+#ifndef _ATOMIC_UNITS
+	const double from_a0 = celerium::convert::a0_to_A;
+	const double from_Ry = celerium::convert::Ry_to_eV;
+#else
+	const double from_a0 = 1.0;
+	const double from_Ry = 1.0;
+#endif
 
 	// parser
 	std::size_t read_file(){
@@ -115,9 +122,12 @@ protected:
 
 	    was_file_read = true;
 
-	  std::for_each( r.begin(), r.end(),[&](T& x){ x*=a0_to_A;});
-	  std::for_each(dr.begin(),dr.end(),[&](T& x){ x*=pow(a0_to_A,3);});
-	  std::for_each( V.begin(), V.end(),[&](T& x){ x*=Ry_to_eV;});
+#ifndef _ATOMIC_UNITS
+	  std::for_each( r.begin(), r.end(),[&](T& x){ x*=from_a0;});
+	  std::for_each(dr.begin(),dr.end(),[&](T& x){ x/=from_a0;});
+	  std::for_each( V.begin(), V.end(),[&](T& x){ x*=from_Ry;});
+#endif
+	  std::for_each( q.begin(), q.end(),[&](T& x){ x*=0.5*from_a0;}); // for convention sqrt(2) = elementary charge
 
 #ifdef _VERBOSE
 	  auto stop = std::chrono::system_clock::now();
@@ -250,6 +260,30 @@ public:
 #endif
 	  return vec.size();
 	}
+
+	// charge getter: in units of the electron charge
+	T get_charge(T&& R = T(-1.0)){
+	  if(!was_file_read) read_file();
+
+#ifdef _VERBOSE
+	  std::cerr<<"celerium::Potential::get_charge: Calculating";
+	  auto start = std::chrono::system_clock::now();
+#endif
+	  auto end = q.size()-1;
+	  if(R > -0.0){
+	    auto shell  = std::find_if(r.begin(),r.end(),[&R](T& r){return R<r;});
+	         end    = std::distance(r.begin(),shell);
+	  }
+	  auto charge = std::inner_product(q.begin(),q.begin()+end,dr.begin(),0.0);
+
+#ifdef _VERBOSE
+	  auto stop = std::chrono::system_clock::now();
+	  std::cerr<<" success\n\t\t\tUsed: "<<end+1<<" records,"<<std::endl;
+	  std::cerr<<"\t\t\tin "<<std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count()<<" µs."<<std::endl;
+#endif
+	  return charge;
+	}
+
 
 	/*
 	 *

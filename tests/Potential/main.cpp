@@ -39,6 +39,11 @@ int main(){
 	potential_double_shortest.get_charge_density(rho);
 	potential_double_shortest.get_volume(volume);
 
+	auto q1 = potential_double_shortest.get_charge(1.0);
+	auto q0 = potential_double_shortest.get_charge();
+	std::cout<<"Charge inside ball of r=1.0 A: "<<q1<<"\te"<<std::endl;
+	std::cout<<"Total charge:                  "<<q0<<"\te"<<std::endl;
+
 	std::ofstream out("data.dat");
 	for(unsigned i = 0U; i< mesh.size(); ++i)
 		out<<mesh[i]<<" "<<volume[i]<<" "<<local[i]<<" "<<rho[i]<<std::endl;
