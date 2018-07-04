@@ -21,6 +21,7 @@ public:
 	Vector(size_t n, bool INITIALIZE = false);
 	Vector(const Vector& rhs);
 	Vector(gsl_vector* v);
+	Vector(const gsl_vector* v);
 	virtual ~Vector();
 
 	void zero();

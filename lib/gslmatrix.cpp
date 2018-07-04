@@ -22,6 +22,12 @@ celerium::gsl::Vector::Vector(gsl_vector* v){
 	myself = v;
 }
 
+celerium::gsl::Vector::Vector(const gsl_vector* v){
+	myself = gsl_vector_alloc(v->size);
+	gsl_vector_memcpy(myself,v);
+	KILLME = true;
+}
+
 namespace celerium{ namespace gsl{
 std::ostream& operator<<(std::ostream& str, const celerium::gsl::Vector& A){
 	str<<"[ ";
