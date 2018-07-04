@@ -36,25 +36,8 @@ protected:
 	double eps;
 	int maxeval;
 public:
-	Bilinear(Type t = Type::Hybrids, double _eps = 1e-5, int _maxeval = 1000):eps(_eps),maxeval(_maxeval){
-		switch(t){
-			case Type::Hybrids:
-				solverType = gsl_multiroot_fsolver_hybrids;
-				break;
-			case Type::Hybrid:
-				solverType = gsl_multiroot_fsolver_hybrid;
-				break;
-			case Type::Newton:
-				solverType = gsl_multiroot_fsolver_dnewton;
-				break;
-			case Type::Broyden:
-				solverType = gsl_multiroot_fsolver_broyden;
-				break;
-			default:
-				throw std::range_error("Wrong solver given!");
-		}
+	Bilinear(double _eps = 1e-5, int _maxeval = 1000):eps(_eps),maxeval(_maxeval){
 
-		solver = gsl_multiroot_fsolver_alloc(solverType,N);
 	}
 
 	~Bilinear(){
@@ -73,9 +56,35 @@ public:
 		return GSL_SUCCESS;
 	}
 
+	void setEps(double& _eps){
+	  eps = _eps;
+	}
+
+	void setMaxEval(double& _maxeval){
+	  maxeval = _maxeval;
+	}
 
 	template<typename Callable>
-	int Solve(Callable F, Vector& variables){
+	int Solve(Callable F, Vector& variables, Type t = Type::Hybrids){
+	  switch(t){
+	  	case Type::Hybrids:
+	  		solverType = gsl_multiroot_fsolver_hybrids;
+	  		break;
+	  	case Type::Hybrid:
+	  		solverType = gsl_multiroot_fsolver_hybrid;
+	  		break;
+	  	case Type::Newton:
+	  		solverType = gsl_multiroot_fsolver_dnewton;
+	  		break;
+	  	case Type::Broyden:
+	  		solverType = gsl_multiroot_fsolver_broyden;
+	  		break;
+	  	default:
+	  		throw std::range_error("Wrong solver given!");
+	  }
+
+	  solver = gsl_multiroot_fsolver_alloc(solverType,N);
+
 	  function = {cFunction<N,Callable>, N, static_cast<void*>(&F)};
 	  gsl_multiroot_fsolver_set(solver,&function,variables());
 
