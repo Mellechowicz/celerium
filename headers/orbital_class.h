@@ -119,13 +119,17 @@ SetActiveMValues Active m values must satisfy |m| < l.");
   // p_y, p_z, and p_x, respecitvely. Note that REAL spherical harmonics are
   // used in computation of the orbtials, see
   // https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
-  double Eval(ArithmeticVector coords, int m) const {
+  double Eval(const ArithmeticVector &coords, int m) const {
 
     if (abs(m) > this->l)
       throw std::invalid_argument("celerium::OrbitalClass::Eval:\
  |m| must not exceed l.");    
+
+    const double r = sqrt(coords[0]*coords[0] +
+                          coords[1]*coords[1] +
+                          coords[2]*coords[2]);
     
-    double result = this->radial_wf(coords.length());
+    double result = this->radial_wf(r);
     result *=
         RealSphericalHarmonic(this->l, m, coords[0], coords[1], coords[2]);
     return result;

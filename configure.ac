@@ -44,7 +44,6 @@ AC_CONFIG_FILES([Makefile
 		 tests/OrbitalClass/Makefile
 		 tests/Element/Makefile
 		 tests/ElementaryCell/Makefile
-		 tests/CubaWrapper/Makefile
-		 tests/GslWrapper/Makefile])
+		 tests/CubaWrapper/Makefile])
 
 AC_OUTPUT
