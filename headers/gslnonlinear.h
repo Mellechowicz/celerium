@@ -1,5 +1,5 @@
-#ifndef _GSL_BILINEAR_H
-#define _GSL_BILINEAR_H
+#ifndef _GSL_NONLINEAR_H
+#define _GSL_NONLINEAR_H
 
 #include <iostream>
 #include <vector>
@@ -27,7 +27,7 @@ int cFunction(const gsl_vector *x, void *params, gsl_vector *f){
 }
 
 template<size_t N>
-class Bilinear{
+class Nonlinear{
 protected:
 	const gsl_multiroot_fsolver_type *solverType;
 	gsl_multiroot_fsolver *solver;
@@ -36,11 +36,11 @@ protected:
 	double eps;
 	int maxeval;
 public:
-	Bilinear(double _eps = 1e-5, int _maxeval = 1000):eps(_eps),maxeval(_maxeval){
+	Nonlinear(double _eps = 1e-5, int _maxeval = 1000):eps(_eps),maxeval(_maxeval){
 
 	}
 
-	~Bilinear(){
+	~Nonlinear(){
 		gsl_multiroot_fsolver_free(solver);
 	}
 
@@ -117,7 +117,7 @@ public:
 	    return GSL_FAILURE;
 	}
 
-}; // end of class Bilinear
+}; // end of class Nonlinear
 
 } // end of namespace gsl
 } // end of namespace celerium
