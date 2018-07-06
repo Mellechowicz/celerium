@@ -2,7 +2,7 @@
 #include <random>
 #include <gsl/gsl_vector.h>
 #include "../../headers/gslmatrix.h"
-#include "../../headers/gslbilinear.h"
+#include "../../headers/gslnonlinear.h"
 #define DISK 5.0
 
 double parabola(celerium::gsl::Vector& x, size_t i){
@@ -22,13 +22,13 @@ int main(){
 	std::extreme_value_distribution<> radius(DISK,0.5);
 	double th,r;
 
-	celerium::gsl::Bilinear<2> blnr;
+	celerium::gsl::Nonlinear<2> solver;
 	celerium::gsl::Vector res(2);
 	res(0) = 0.012311;
 	res(1) = 0.11234124;
 
 	std::cout<<"Paraboloid:"<<std::endl;
-	blnr.Solve(parabola,res);
+	solver.Solve(parabola,res);
 
 	std::cout<<res;
 
@@ -50,28 +50,28 @@ int main(){
 	th =  angle(gen);
 	res(0) = r*sin(th);
 	res(1) = r*cos(th);
-	blnr.Solve(mexicanHat,res,celerium::gsl::Hybrids);
+	solver.Solve(mexicanHat,res,celerium::gsl::Hybrids);
 	std::cout<<"error: "<<fabs(DISK-res(0)*res(0)-res(1)*res(1))<<std::endl;
 	std::cout<<"Hybrid"<<std::endl;
 	r  = radius(gen);
 	th =  angle(gen);
 	res(0) = r*sin(th);
 	res(1) = r*cos(th);
-	blnr.Solve(mexicanHat,res,celerium::gsl::Hybrid);
+	solver.Solve(mexicanHat,res,celerium::gsl::Hybrid);
 	std::cout<<"error: "<<fabs(DISK-res(0)*res(0)-res(1)*res(1))<<std::endl;
 	std::cout<<"Newton"<<std::endl;
 	r  = radius(gen);
 	th =  angle(gen);
 	res(0) = r*sin(th);
 	res(1) = r*cos(th);
-	blnr.Solve(mexicanHat,res,celerium::gsl::Newton);
+	solver.Solve(mexicanHat,res,celerium::gsl::Newton);
 	std::cout<<"error: "<<fabs(DISK-res(0)*res(0)-res(1)*res(1))<<std::endl;
 	std::cout<<"Broyden"<<std::endl;
 	r  = radius(gen);
 	th =  angle(gen);
 	res(0) = r*sin(th);
 	res(1) = r*cos(th);
-	blnr.Solve(mexicanHat,res,celerium::gsl::Broyden);
+	solver.Solve(mexicanHat,res,celerium::gsl::Broyden);
 	std::cout<<"error: "<<fabs(DISK-res(0)*res(0)-res(1)*res(1))<<std::endl;
 
 

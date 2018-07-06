@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cuba.h>
 #include <iostream>
+#include <tuple>
 
 namespace celerium{
 namespace cuba{
@@ -21,24 +22,27 @@ template<typename Callable>
 int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
 	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
 
-  auto function = static_cast<std::pair<Callable,std::vector<std::pair<double,double>>>*>(userdata)->first;
-  auto hyperCube = static_cast<std::pair<Callable,std::vector<std::pair<double,double>>>*>(userdata)->second;
+  auto function = std::get<0>(*static_cast<std::tuple<Callable,std::vector<std::pair<double,double>>,int>*>(userdata));
+  auto hyperCube = std::get<1>(*static_cast<std::tuple<Callable,std::vector<std::pair<double,double>>,int>*>(userdata));
+  auto nVec = std::get<2>(*static_cast<std::tuple<Callable,std::vector<std::pair<double,double>>,int>*>(userdata));
 
-  double *xi = new double[hyperCube.size()];
-  for(size_t i=0U; i<hyperCube.size(); ++i)
-    xi[i] = hyperCube[i].first + (hyperCube[i].second - hyperCube[i].first)*x[i];
+  int result = -1;
 
-  int result = function(xi,f);
+    double *xi = new double[nVec*hyperCube.size()];
+    for(int i=0; i<nVec; ++i)
+      for(size_t j=0U; j<hyperCube.size(); ++j){
+        xi[hyperCube.size()*i+j] = hyperCube[j].first + (hyperCube[j].second - hyperCube[j].first)*x[i*hyperCube.size()+j];
+      }
 
-  delete [] xi;
+    result = function(xi,f);
 
+    delete [] xi;
+  
   return result;
 }
 
 class Cuba{
 private:
-  void* hyperCube;
-
   int hasFailed;
 
   std::mt19937 seed_generator;
@@ -53,8 +57,8 @@ public:
 
   struct Parameters{
     int nDim;
-    const int nComp = 1;
-    int nvec;
+    int nComp;
+    const int nvec = 1;
     double epsrel;
     double epsabs;
 #ifdef _CUBA_VERBOSE
@@ -113,7 +117,7 @@ public:
     int key;
 
     Parameters(int _nDim = 1, int _maxeval = 1048576 /*2^20*/, int _mineval = 0, double eps = 1.52587890625e-05 /*2^-16*/): 
-	nDim(_nDim), nvec(1), epsrel(eps), epsabs(eps*0.015625 /**2^-6*/), seed(0),
+	nDim(_nDim), nComp(1), epsrel(eps), epsabs(eps*0.015625 /**2^-6*/), seed(0),
        	mineval(_mineval), maxeval(_maxeval), nstart(static_cast<int>(sqrt(maxeval))), nincrease(100), nbatch(100), gridno(0), statefile(NULL),
        	nnew(1000), nmin(2), flatness(5.), key1(47), key2(1), key3(1), maxpass(5), border(0.), maxchisq(10.),
        	mindeviation(.25), ngiven(0), ldxgiven(_nDim), xgiven(NULL), nextra(0), key(0){}
@@ -136,8 +140,9 @@ public:
 	jacobian = 1.0;
 	for(const auto& limits : _hyperCube)
 	  jacobian *= limits.second - limits.first;
-	hyperCube = static_cast<void*>(&_hyperCube);
-	auto data = std::make_pair(F,_hyperCube);
+
+	auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
+
 	auto output = suave_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
 	return output;
 
@@ -162,11 +167,13 @@ public:
  template<typename Callable>
  int divonne_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
 	parameters.nDim = _hyperCube.size();
+
 	jacobian = 1.0;
 	for(const auto& limits : _hyperCube)
 	  jacobian *= limits.second - limits.first;
-	hyperCube = static_cast<void*>(&_hyperCube);
-	auto data = std::make_pair(F,_hyperCube);
+
+	auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
+
 	auto output = divonne_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
 	return output;
 
