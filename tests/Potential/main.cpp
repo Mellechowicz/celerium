@@ -33,20 +33,31 @@ int main(){
 	potential_double_shortest.input("Cr.UPF");				// providing input file (works also for std::strings)
 
 	// Getting data from potential	
-	std::vector<double> mesh,local,rho,volume;
+	std::vector<double> mesh,local,rho,volume,rho_2;
 	potential_double_shortest.get_mesh(mesh);
 	potential_double_shortest.get_local(local);
 	potential_double_shortest.get_charge_density(rho);
 	potential_double_shortest.get_volume(volume);
+	auto halfsize = potential_double_shortest.get_percentage_charge_density(rho_2,0.5);
 
 	auto q1 = potential_double_shortest.get_charge(1.0);
 	auto q0 = potential_double_shortest.get_charge();
 	std::cout<<"Charge inside ball of r=1.0 A: "<<q1<<"\te"<<std::endl;
 	std::cout<<"Total charge:                  "<<q0<<"\te"<<std::endl;
 
+
 	std::ofstream out("data.dat");
-	for(unsigned i = 0U; i< mesh.size(); ++i)
-		out<<mesh[i]<<" "<<volume[i]<<" "<<local[i]<<" "<<rho[i]<<std::endl;
+	for(unsigned i = 0U; i< mesh.size(); ++i){
+		out<<mesh[i]<<" "<<volume[i]<<" "<<local[i]<<" "<<rho[i];
+		out<<std::endl;
+	}
+	out.close();
+
+	out = std::ofstream("halfcharge.dat");
+	for(unsigned i = 0U; i<halfsize; ++i){
+		out<<mesh[i]<<" "<<volume[i]<<" "<<local[i]<<" "<<rho_2[i];
+		out<<std::endl;
+	}
 	out.close();
 
 	// Error: broken file
