@@ -103,6 +103,7 @@ static int swap(Matrix& lhs, Matrix& rhs){
 	Matrix& operator*=(const Matrix& rhs);
 	Matrix& operator=(const Matrix& rhs);
 	Matrix& operator=(const Vector& rhs);
+        Matrix& operator*(double scalar);
 
 	/*
 	 * EIGENPROBLEM

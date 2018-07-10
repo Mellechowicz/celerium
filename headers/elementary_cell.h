@@ -91,14 +91,8 @@ Attempted to add two lattice sites with the same name.");
   size_t NSites() const {return this->lattice_sites.size();}
 
   void EvaluateOrbitals(const ArithmeticVector &coords,
-                        std::vector<double> &result) const {
-
-    //result.resize(this->n_orbitals);
-    //result.resize(12);
-    //std::cout << "ev_orb: " << this->n_orbitals << "\n";
-    return;
-
-    
+                        double result []) const {
+ 
     size_t i = 0;
     double radial_wf_value;
 
@@ -120,6 +114,10 @@ Attempted to add two lattice sites with the same name.");
     }  
   }
 
+  void EvaluateOrbitals(const ArithmeticVector &coords,
+                        std::vector<double> &result) const {
+    EvaluateOrbitals(coords, result.data());
+  }
 
   void EvaluateLaplacians(const ArithmeticVector &coords,
                           std::vector<double> &result) const {
