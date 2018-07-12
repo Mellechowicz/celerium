@@ -1,32 +1,75 @@
 #include <periodic_lowdin.h>
+#include <gslmatrixcomplex.h>
+#include <iomanip>
+#include <algorithm>
 
 using namespace celerium;
 
 int main(int argc, char *argv[])
 {
+  
+  std::cout << std::setprecision(12);
 
-  gsl::Matrix overlap_000(1, {1.0});
-  gsl::Matrix overlap_100(1, {0.1});
+  std::vector<std::vector<std::vector<std::complex<double>>>> result;
+
+  std::vector<std::pair<std::array<int, 3>,
+                        gsl::MatrixComplex>> overlaps;
 
 
-  std::vector<std::vector<double>> result;
+  overlaps.push_back(
+      { {0, 0, 0}, gsl::MatrixComplex(2, {1.0, 0.5, 0.5, 1.0}) });
 
-  std::vector<std::pair<std::array<int, 3>, gsl::Matrix>> real_space_overlaps;
+  overlaps.push_back(
+      { {-1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
 
-  real_space_overlaps.push_back({ {0, 0, 0}, overlap_000 });
-  real_space_overlaps.push_back({ {1, 0, 0}, overlap_100 });
+  overlaps.push_back(
+      { {+1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
 
-  PeriodicLowdin(real_space_overlaps,
-                 {4, 1, 1},
-                 result);
+  overlaps.push_back(
+      { {+2, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
 
-  for (auto m : result) {
-    std::cout << m[0] << "\n";  
+  overlaps.push_back(
+      { {-2, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+
+
+  PeriodicOthogonalization(overlaps,
+                           {overlaps.size(), 1, 1},
+                           {{0, 0, 0}, {1, 0, 0}},
+                           result);
+
+
+  std::cout << "solution: " << "\n";
+
+
+  
+  for (size_t i = 0; i < result[0].size(); ++i) {
+    std::cout << "Wannier #" << i << ":\n";
+    for (size_t j = 0; j <  result[0][i].size(); ++j) {
+      auto pos = overlaps[j / overlaps[0].second.columnNumber()].first;
+      std::cout << j % overlaps[0].second.columnNumber();
+      std::cout << ", (" << pos[0] << ", " << pos[1] << ", " << pos[2] << "): ";
+      std::cout <<  result[0][i][j].real() << "\n";
+    }
+    std::cout << "\n";
   }
 
+  std::cout << "\n\n";
+
+
+   
+  std::cout << "Wannier overlaps: \n";
+
+  for (size_t o1 = 0; o1 < 2; ++o1) {
+    for (size_t o2 = 0; o2 < 2; ++o2) {
+      std::cout << ScalarProduct(overlaps, result, 0, o1, 0, o2).real() << " ";
+    }
+    std::cout << "\n";
+  }
   
-  
-  
-  
+
+
+      
+
+
   return 0;
 }

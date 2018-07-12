@@ -399,3 +399,5 @@ void celerium::gsl::Matrix::symmetricEigenProblem(celerium::gsl::Matrix& eigenve
 	
 	gsl_eigen_symmv_free(workspace);
 }
+
+
