@@ -7,6 +7,8 @@ using namespace celerium;
 
 int main(int argc, char *argv[])
 {
+
+  std::complex<double> I {0, 1};
   
   std::cout << std::setprecision(12);
 
@@ -16,20 +18,27 @@ int main(int argc, char *argv[])
                         gsl::MatrixComplex>> overlaps;
 
 
-  overlaps.push_back(
-      { {0, 0, 0}, gsl::MatrixComplex(2, {1.0, 0.5, 0.5, 1.0}) });
 
   overlaps.push_back(
-      { {-1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+      { {0, 0, 0}, gsl::MatrixComplex(2, {1.0, 0.1, 0.1, 1.0}) });
 
   overlaps.push_back(
-      { {+1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+      { {+1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.5, 0.2, 0.0}) });
 
+  overlaps.push_back(
+      { {-1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.2, 0.5, 0.0}) });
+  
   overlaps.push_back(
       { {+2, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
 
   overlaps.push_back(
       { {-2, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+
+  overlaps.push_back(
+      { {+3, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+
+  overlaps.push_back(
+      { {-3, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
 
 
   PeriodicOthogonalization(overlaps,
@@ -48,7 +57,7 @@ int main(int argc, char *argv[])
       auto pos = overlaps[j / overlaps[0].second.columnNumber()].first;
       std::cout << j % overlaps[0].second.columnNumber();
       std::cout << ", (" << pos[0] << ", " << pos[1] << ", " << pos[2] << "): ";
-      std::cout <<  result[0][i][j].real() << "\n";
+      std::cout <<  result[0][i][j] << "\n";
     }
     std::cout << "\n";
   }

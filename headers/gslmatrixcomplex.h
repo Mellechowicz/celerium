@@ -92,6 +92,7 @@ static int swap(MatrixComplex& lhs, MatrixComplex& rhs){
 	VectorComplex column(size_t i);
 	void invert();
 	int transpose();
+        int hermitianConjugate();
 
 	/*
 	 * ARITHM. OPERATORS
@@ -126,7 +127,6 @@ static int swap(MatrixComplex& lhs, MatrixComplex& rhs){
 		symmetricEigenProblem(beta,lambda);
 		MatrixComplex result;
 	        result= beta;
-		result.invert();
 
 		for(size_t i=0; i<lambda.size(); ++i){
 		  double l = F(lambda(i));
@@ -139,6 +139,7 @@ static int swap(MatrixComplex& lhs, MatrixComplex& rhs){
                   
 		}
 
+                beta.invert();
 		result *= beta;
 		return result;
 	}

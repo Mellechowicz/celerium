@@ -34,9 +34,34 @@ int PeriodicOthogonalization(
   gsl::Vector eigenvalues(matrix_dim);
   std::array<double, 3> k;
 
-  for (size_t i_0 = 0; i_0 < supercell[0]; ++i_0) {
-    for (size_t i_1 = 0; i_1 < supercell[1]; ++i_1) {
-      for (size_t i_2 = 0; i_2 < supercell[2]; ++i_2) {
+  size_t i_0_max = supercell[0];
+  size_t i_1_max = supercell[1];
+  size_t i_2_max = supercell[2];
+
+  /*  
+  bool count_twice_k_0 ;
+      
+  if (i_0_max > 1) {
+    i_0_max = i_0_max / 2 + i_0_max % 2;
+    count_twice_k_0 = (i_0_max % 2 == 0 ? true : false);
+
+    std::cout << "i0max: " << supercell[0] << "\n";
+    std::cout << "i0max: " << i_0_max << "\n";
+    
+  }
+  else if (i_1_max > 1) {
+    i_1_max = i_1_max / 2 + i_1_max % 2;
+    count_twice_k_0 = (i_1_max % 2 == 0 ? true : false);
+  }
+  else if (i_2_max > 1) {
+    i_2_max = i_2_max / 2 + i_2_max % 2;
+    count_twice_k_0 = (i_2_max % 2 == 0 ? true : false);
+  }
+  */
+  
+  for (size_t i_0 = 0; i_0 < i_0_max; ++i_0) {
+    for (size_t i_1 = 0; i_1 < i_1_max; ++i_1) {
+      for (size_t i_2 = 0; i_2 < i_2_max; ++i_2) {
 
         k[0] = 2*M_PI*i_0/((double)supercell[0]);
         k[1] = 2*M_PI*i_1/((double)supercell[1]);
@@ -62,13 +87,12 @@ int PeriodicOthogonalization(
 
         // We need to make a copy of overlaps as they will be
         // altered by eigensolver.
-        auto k_space_overlap_tmp = k_space_overlap;
+        auto k_space_overlap_copy = k_space_overlap;
 
-        k_space_overlap_tmp.symmetricEigenProblem(eigenvectors, eigenvalues);
-
-        // Non-standard convention in wrapper.
+        k_space_overlap_copy.symmetricEigenProblem(eigenvectors, eigenvalues);
+        
         auto eigenvectors_transposed = eigenvectors;
-        eigenvectors.transpose(); 
+        eigenvectors_transposed.hermitianConjugate(); 
        
         auto normalization_matrix = eigenvectors_transposed *
                                     k_space_overlap *
@@ -85,12 +109,12 @@ int PeriodicOthogonalization(
        }
         
        eigenvectors_transposed = eigenvectors;
-       eigenvectors_transposed.transpose();
+       eigenvectors_transposed.hermitianConjugate();
 
-        size_t n_sites = supercell[0]*supercell[1]*supercell[2];
+       auto k_space_overlap_transposed = k_space_overlap;
+       k_space_overlap_transposed.hermitianConjugate();
 
-        auto k_space_overlap_transposed = k_space_overlap;
-        k_space_overlap_transposed.transpose();
+       size_t n_sites = supercell[0]*supercell[1]*supercell[2];
         
         for (size_t i = 0; i < real_space_overlaps.size(); ++i) {
           
@@ -102,7 +126,7 @@ int PeriodicOthogonalization(
                          eigenvectors_transposed *
                          k_space_overlap_transposed).apply([](double x) {return 1.0/sqrt(x);});
           
-          //auto entry = eigenvectors_transposed;
+          //auto entry = eigenvectors;
 
 
 
@@ -126,11 +150,24 @@ int PeriodicOthogonalization(
 
               for (size_t orbital_index_2 = 0;
                    orbital_index_2 < matrix_dim;
-                   ++orbital_index_2)
+                   ++orbital_index_2) {
+
+                //if (k[0] == 0 && k[1] == 0 && k[2] == 0 && !count_twice_k_0) {
+                
+                   //result[pos_index][orbital_index_1][orbital_index_2 + i*matrix_dim] +=
+                     // entry(orbital_index_2, orbital_index_1) *
+                     //  std::cos(k0_times_r0+k1_times_r1+k2_times_r2) /
+                     //   ((double)n_sites);
+                 // }
+                 //else {
                 result[pos_index][orbital_index_1][orbital_index_2 + i*matrix_dim] +=
                     entry(orbital_index_2, orbital_index_1) *
-                    std::exp( I*(k0_times_r0+k1_times_r1+k2_times_r2) ) /
-                    ((double)n_sites);
+                    std::exp(I*(k0_times_r0+k1_times_r1+k2_times_r2)) /
+                    ((double)n_sites);                  
+                //}
+                
+              }
+              
             }
           
           }

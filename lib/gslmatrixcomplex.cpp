@@ -267,6 +267,18 @@ int celerium::gsl::MatrixComplex::transpose(){
 	return gsl_matrix_complex_transpose(myself);
 }
 
+int celerium::gsl::MatrixComplex::hermitianConjugate(){
+
+  for (size_t i1 = 0; i1 < rowNumber(); ++i1) {
+    for (size_t i2 = 0; i2 < columnNumber(); ++i2) {
+      imag(i1, i2) *= -1;
+    }
+  }
+  
+  return gsl_matrix_complex_transpose(myself);
+}
+
+
 /*
  * ARITHM. OPERATORS
  */
@@ -407,7 +419,7 @@ void celerium::gsl::MatrixComplex::symmetricEigenProblem(celerium::gsl::MatrixCo
 	
 	gsl_eigen_hermv(myself, eigenvalues(), eigenvectors(), workspace);
 
-	eigenvectors.transpose(); // mathematical convention: vectors in columns!
+	//eigenvectors.transpose(); // mathematical convention: vectors in columns!
 	
 	gsl_eigen_hermv_free(workspace);
 }

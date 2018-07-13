@@ -19,7 +19,7 @@ class OrbitalClass {
 
   // Initializes an orbital class with guven radial wave function,
   // eigenenergy and angular orbtial momentum. All values
-  // m = -l, .. l are considered active bu default.
+  // m = -l, .. l are considered active by default.
   OrbitalClass(const RadialWF &radial_wf, double energy, int n, int l) {
     
     if (l < 0) throw std::invalid_argument("celerium::OrbitalClass: \
@@ -117,7 +117,7 @@ SetActiveMValues Active m values must satisfy |m| < l.");
   // Evaluates the the m-th orbital of the orbital class at the point coords.
   // For instance, if l=1 then m=-1, 0, and 1 correspond to
   // p_y, p_z, and p_x, respecitvely. Note that REAL spherical harmonics are
-  // used in computation of the orbtials, see
+  // used in computation of the orbitals, see
   // https://en.wikipedia.org/wiki/Spherical_harmonics#Real_form
   double Eval(const ArithmeticVector &coords, int m) const {
 
