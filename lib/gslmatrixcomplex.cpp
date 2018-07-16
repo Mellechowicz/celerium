@@ -147,6 +147,17 @@ celerium::gsl::MatrixComplex::MatrixComplex(const celerium::gsl::MatrixComplex& 
 	KILLME = true;
 }
 
+celerium::gsl::MatrixComplex::MatrixComplex(const Matrix& rhs) {
+        myself = gsl_matrix_complex_alloc(rhs().size1,rhs().size2);
+        for (size_t i1 = 0; i1 < rhs().size1; ++i1) {
+          for (size_t i2 = 0; i2 < rhs().size2; ++i2) {
+            real(i1, i2) = rhs(i1, i2);
+            imag(i1, i2) = 0.0;
+          }
+        }
+        KILLME = true;
+}
+
 celerium::gsl::MatrixComplex::MatrixComplex(size_t n, const std::initializer_list<std::complex<double>> init){
 	myself = gsl_matrix_complex_alloc(n,n);
 	KILLME = true;
@@ -394,6 +405,73 @@ celerium::gsl::MatrixComplex& celerium::gsl::MatrixComplex::operator=(const cele
 
 	return *this;
 }
+
+
+/////////////////////////////////////////////////////////
+
+
+
+celerium::gsl::MatrixComplex& celerium::gsl::MatrixComplex::operator+=(const celerium::gsl::Matrix& rhs){
+	if(rowNumber() != rhs.rowNumber() || columnNumber() != rhs.columnNumber())
+	  throw std::logic_error("Oy! You can't add different-type matrices!");
+	for (size_t i1 = 0; i1 < rhs().size1; ++i1) {
+          for (size_t i2 = 0; i2 < rhs().size2; ++i2) {
+            real(i1, i2) += rhs(i1, i2);
+          }
+        }
+	return *this;
+}
+
+celerium::gsl::MatrixComplex celerium::gsl::MatrixComplex::operator+(const celerium::gsl::Matrix& rhs) const{
+	MatrixComplex result(*this);
+	for (size_t i1 = 0; i1 < rhs().size1; ++i1) {
+          for (size_t i2 = 0; i2 < rhs().size2; ++i2) {
+            result.real(i1, i2) += rhs(i1, i2);
+          }
+        }        
+	return result;
+}
+
+celerium::gsl::MatrixComplex& celerium::gsl::MatrixComplex::operator-=(const celerium::gsl::Matrix& rhs){
+	if(rowNumber() != rhs.rowNumber() || columnNumber() != rhs.columnNumber())
+	  throw std::logic_error("Oy! You can't add different-type matrices!");
+	for (size_t i1 = 0; i1 < rhs().size1; ++i1) {
+          for (size_t i2 = 0; i2 < rhs().size2; ++i2) {
+            real(i1, i2) -= rhs(i1, i2);
+          }
+        }
+	return *this;
+}
+
+celerium::gsl::MatrixComplex celerium::gsl::MatrixComplex::operator-(const celerium::gsl::Matrix& rhs) const{
+	MatrixComplex result(*this);
+	for (size_t i1 = 0; i1 < rhs().size1; ++i1) {
+          for (size_t i2 = 0; i2 < rhs().size2; ++i2) {
+            result.real(i1, i2) -= rhs(i1, i2);
+          }
+        }        
+	return result;
+}
+
+celerium::gsl::MatrixComplex& celerium::gsl::MatrixComplex::operator=(const celerium::gsl::Matrix& rhs){
+	if(KILLME) gsl_matrix_complex_free(myself);
+	myself = gsl_matrix_complex_alloc(rhs().size1,rhs().size2);
+	for (size_t i1 = 0; i1 < rhs().size1; ++i1) {
+          for (size_t i2 = 0; i2 < rhs().size2; ++i2) {
+            real(i1, i2) = rhs(i1, i2);
+            imag(i1, i2) = 0.0;
+          }
+        }	
+	KILLME = true;
+
+	return *this;
+}
+
+
+
+
+
+/////////////////////////////////////////////////////////
 
 celerium::gsl::MatrixComplex& celerium::gsl::MatrixComplex::operator*(std::complex<double> scalar) {
   gsl_matrix_complex_scale(myself,{scalar.real(),scalar.imag()});

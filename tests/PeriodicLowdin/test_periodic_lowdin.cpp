@@ -7,75 +7,116 @@ using namespace celerium;
 
 int main(int argc, char *argv[])
 {
-
-  std::complex<double> I {0, 1};
-  
   std::cout << std::setprecision(12);
-
-  std::vector<std::vector<std::vector<std::complex<double>>>> result;
-
-  std::vector<std::pair<std::array<int, 3>,
-                        gsl::MatrixComplex>> overlaps;
-
-
-
-  overlaps.push_back(
-      { {0, 0, 0}, gsl::MatrixComplex(2, {1.0, 0.1, 0.1, 1.0}) });
-
-  overlaps.push_back(
-      { {+1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.5, 0.2, 0.0}) });
-
-  overlaps.push_back(
-      { {-1, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.2, 0.5, 0.0}) });
   
-  overlaps.push_back(
-      { {+2, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+  // This object will store the contributions of respective orbitals to
+  // Wannier functions.
+  std::vector<std::vector<std::vector<double>>> wannier_coefficients;
 
-  overlaps.push_back(
-      { {-2, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+  // This vector will be filled with the positions of orbitals
+  // contributing to the Wannier function.
+  std::vector<std::array<int, 3>> orbital_positions;
 
-  overlaps.push_back(
-      { {+3, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+  // Overlap integrals between orbitals in different lattice positions.
+  // Those are provided by the user.
+  std::vector<std::pair<std::array<int, 3>, gsl::Matrix>> orbital_overlaps;
 
-  overlaps.push_back(
-      { {-3, 0, 0}, gsl::MatrixComplex(2, {0.0, 0.0, 0.0, 0.0}) });
+  size_t n_orbitals = 2;
+  
+  orbital_overlaps.push_back(
+      { {0, 0, 0}, gsl::Matrix(n_orbitals, {1.0, 0.1, 0.1, 1.0}) });
+
+  orbital_overlaps.push_back(
+      { {0, 1, 0}, gsl::Matrix(n_orbitals, {0.12, 0.08, 0.08, 0.12}) });
+
+  orbital_overlaps.push_back(
+      { {0, 2, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {1, -2, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {1, -1, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {1, 0, 0}, gsl::Matrix(n_orbitals, {0.12, 0.08, 0.08, 0.12}) });
+
+  orbital_overlaps.push_back(
+      { {1, 1, 0}, gsl::Matrix(n_orbitals, {0.0, 0.3, 0.3, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {1, 2, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {2, -2, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {2, -1, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {2, 0, 0}, gsl::Matrix(n_orbitals, {0.2, 0.0, 0.0, 0.2}) });
+
+  orbital_overlaps.push_back(
+      { {2, 1, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
+
+  orbital_overlaps.push_back(
+      { {2, 2, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
 
 
-  PeriodicOthogonalization(overlaps,
-                           {overlaps.size(), 1, 1},
-                           {{0, 0, 0}, {1, 0, 0}},
-                           result);
+  PeriodicOthogonalization(orbital_overlaps,
+                           {10, 10, 0},
+                           {{0, 0, 0}, {2, 0, 0}},
+                           orbital_positions,
+                           wannier_coefficients);
 
 
   std::cout << "solution: " << "\n";
-
-
   
-  for (size_t i = 0; i < result[0].size(); ++i) {
-    std::cout << "Wannier #" << i << ":\n";
-    for (size_t j = 0; j <  result[0][i].size(); ++j) {
-      auto pos = overlaps[j / overlaps[0].second.columnNumber()].first;
-      std::cout << j % overlaps[0].second.columnNumber();
-      std::cout << ", (" << pos[0] << ", " << pos[1] << ", " << pos[2] << "): ";
-      std::cout <<  result[0][i][j] << "\n";
+  for (size_t wannier_index = 0;
+       wannier_index < wannier_coefficients[0].size();
+       ++wannier_index) {
+    
+    std::cout << "Wannier #" << wannier_index << ":\n";
+
+    for (size_t orbital_position_index = 0;
+         orbital_position_index < orbital_positions.size();
+         ++orbital_position_index) {
+
+      std::cout << "(";
+      std::cout << orbital_positions[orbital_position_index][0] << " ";
+      std::cout << orbital_positions[orbital_position_index][1] << " ";
+      std::cout << orbital_positions[orbital_position_index][2] << "): ";
+      
+      for (size_t orbital_index = 0;
+           orbital_index < n_orbitals;
+           ++orbital_index) {
+        std::cout <<
+            wannier_coefficients[0]
+                                [wannier_index]
+                                [orbital_index+n_orbitals*orbital_position_index] << " ";
+      }
+      std::cout << "\n";
     }
     std::cout << "\n";
   }
 
   std::cout << "\n\n";
-
-
-   
-  std::cout << "Wannier overlaps: \n";
+  
+  std::cout << "Wannier orbital_overlaps: \n";
 
   for (size_t o1 = 0; o1 < 2; ++o1) {
     for (size_t o2 = 0; o2 < 2; ++o2) {
-      std::cout << ScalarProduct(overlaps, result, 0, o1, 0, o2).real() << " ";
+      std::cout << ScalarProduct(orbital_overlaps,
+                                 orbital_positions,
+                                 wannier_coefficients,
+                                 false,
+                                 0, o1,
+                                 0, o2) << " ";
     }
     std::cout << "\n";
   }
   
-
+  
 
       
 

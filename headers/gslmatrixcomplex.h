@@ -67,7 +67,8 @@ public:
 	MatrixComplex(size_t n, bool INITIALIZE = false);
 	MatrixComplex(size_t n, size_t m, bool INITIALIZE = false);
 	MatrixComplex(const MatrixComplex& rhs);
-  MatrixComplex(size_t n, const std::initializer_list<std::complex<double>> init);
+        MatrixComplex(const Matrix& rhs);
+        MatrixComplex(size_t n, const std::initializer_list<std::complex<double>> init);
 	virtual ~MatrixComplex();
 	void zero();
 	void one();
@@ -108,6 +109,13 @@ static int swap(MatrixComplex& lhs, MatrixComplex& rhs){
 	MatrixComplex& operator*=(const MatrixComplex& rhs);
 	MatrixComplex& operator=(const MatrixComplex& rhs);
 	MatrixComplex& operator=(const VectorComplex& rhs);
+
+  	MatrixComplex& operator+=(const Matrix& rhs);
+	MatrixComplex operator+(const Matrix& rhs) const;
+	MatrixComplex& operator-=(const Matrix& rhs);
+	MatrixComplex operator-(const Matrix& rhs) const;
+	MatrixComplex& operator=(const Matrix& rhs);
+  
         MatrixComplex& operator*(std::complex<double> scalar);
 
 	/*
