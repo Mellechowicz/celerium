@@ -31,6 +31,7 @@ protected:
 	bool was_file_read;
 	bool was_file_set;
 	stoT convert;
+	T totalCharge;		// total ionic charge
 
 #ifndef _ATOMIC_UNITS
 	const double from_a0 = celerium::convert::a0_to_A;
@@ -129,10 +130,13 @@ protected:
 #endif
 	  std::for_each( q.begin(), q.end(),[&](T& x){ x*=0.5*from_a0;}); // for convention sqrt(2) = elementary charge
 
+	  totalCharge = std::inner_product(q.begin(),q.end(),dr.begin(),0.0);
+
 #ifdef _VERBOSE
 	  auto stop = std::chrono::system_clock::now();
 	  std::cerr<<" success\n\t\t\tRead "<<r_length<<" records from file "<<file_name<<","<<std::endl;
 	  std::cerr<<"\t\t\tin "<<std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count()<<" ms."<<std::endl;
+	  std::cerr<<"Total charge: "<<totalCharge<<"|e|."<<std::endl;
 #endif
 	    return r_length;
 	  }
@@ -262,7 +266,7 @@ public:
 	}
 
 	// charge getter: in units of the electron charge
-	T get_charge(T&& R = T(-1.0)){
+	T get_charge(T R = T(-1.0)){
 	  if(!was_file_read) read_file();
 
 #ifdef _VERBOSE
@@ -270,11 +274,16 @@ public:
 	  auto start = std::chrono::system_clock::now();
 #endif
 	  auto end = q.size()-1;
+	  T charge;
 	  if(R > -0.0){
 	    auto shell  = std::find_if(r.begin(),r.end(),[&R](T& r){return R<r;});
-	         end    = std::distance(r.begin(),shell);
-	  }
-	  auto charge = std::inner_product(q.begin(),q.begin()+end,dr.begin(),0.0);
+	    if (shell == r.end())
+	      charge = totalCharge;
+	    else{
+	      end    = std::distance(r.begin(),shell);
+	      charge = std::inner_product(q.begin(),q.begin()+end,dr.begin(),0.0);
+	    }
+	  } else charge = totalCharge;
 
 #ifdef _VERBOSE
 	  auto stop = std::chrono::system_clock::now();
@@ -284,6 +293,45 @@ public:
 	  return charge;
 	}
 
+	// get charge-percentage border
+	size_t get_charge_percentage_border(T p = 1.0){
+	  if(!was_file_read) read_file();
+
+	  T partialCharge = p>=1.0 ? totalCharge : p<=0.0 ? 0.0 : p*totalCharge;
+	  size_t steps = 0U;
+	  std::inner_product(q.begin(),q.end(),dr.begin(),0.0,
+		 [&partialCharge,&steps](const T& value, const T& dv){
+		   if(value < partialCharge){
+		     ++steps;
+		     return value+dv;
+		   }
+		   else return value;
+		 }, [](const T& _dq, const T& _dr){return _dq*_dr;});
+
+	  return steps;
+	 }
+
+	// get charge density up to charge-percentage border
+	size_t get_percentage_charge_density(std::vector<T>& vec, T p = 1.0){
+	  if(!was_file_read) read_file();
+
+#ifdef _VERBOSE
+	  if(vec.size()) std::cerr<<"celerium::Potential::get_percentage_charge_density: you passed a non-zero vector!"<<std::endl;
+	  std::cerr<<"celerium::Potential::get_percentage_charge_density: Passing..."<<std::flush;
+	  auto start = std::chrono::system_clock::now();
+#endif
+	  vec.clear();
+	  auto steps = get_charge_percentage_border(p);
+	  vec.reserve(steps);
+	  std::copy(q.begin(),q.begin()+steps,std::back_inserter(vec));
+
+#ifdef _VERBOSE
+	  auto stop = std::chrono::system_clock::now();
+	  std::cerr<<" success\n\t\t\tPassed "<<vec.size()<<" records,"<<std::endl;
+	  std::cerr<<"\t\t\tin "<<std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count()<<" µs."<<std::endl;
+#endif
+	  return steps;
+         }
 
 	/*
 	 *
