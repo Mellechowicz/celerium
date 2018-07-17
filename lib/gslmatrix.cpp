@@ -77,6 +77,7 @@ double& celerium::gsl::Vector::operator()(size_t i){
 }
 
 void celerium::gsl::Vector::zero(){
+  if (!KILLME) return; // Do nothing if matrix is not initialized;
 	gsl_vector_set_zero(myself);
 }
 
@@ -121,7 +122,6 @@ double celerium::gsl::Vector::operator*(const celerium::gsl::Vector& rhs) const{
 	gsl_blas_ddot(myself,&rhs(),&result);
 	return result;
 }
-
 
 celerium::gsl::Matrix::Matrix(){
 	myself = nullptr;
@@ -206,6 +206,7 @@ int celerium::gsl::Matrix::swap(celerium::gsl::Matrix& rhs){
 }
 
 void celerium::gsl::Matrix::zero(){
+    if (!KILLME) return; // Do nothing if matrix is not initialized;
 	gsl_matrix_set_zero(myself);
 }
 
@@ -370,6 +371,11 @@ celerium::gsl::Matrix& celerium::gsl::Matrix::operator=(const celerium::gsl::Vec
 	return *this;
 }
 
+celerium::gsl::Matrix& celerium::gsl::Matrix::operator*(double scalar) {
+  gsl_matrix_scale(myself,scalar);
+  return *this;
+}
+
 
 
 /*
@@ -393,3 +399,5 @@ void celerium::gsl::Matrix::symmetricEigenProblem(celerium::gsl::Matrix& eigenve
 	
 	gsl_eigen_symmv_free(workspace);
 }
+
+

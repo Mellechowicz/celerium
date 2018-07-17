@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
   // *****************************************************
 
   // We first create hydrogen atom without any orbitals.
+  // Those will be determined numerically.
   Element hydrogen_numerical("H", coulomb_potential, {});
 
   // Define the mesh over which the wave function will be sampled.

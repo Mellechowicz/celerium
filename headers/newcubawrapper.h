@@ -22,9 +22,9 @@ template<typename Callable>
 int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
 	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
 
-  auto function = std::get<0>(*static_cast<std::tuple<Callable,std::vector<std::pair<double,double>>,int>*>(userdata));
-  auto hyperCube = std::get<1>(*static_cast<std::tuple<Callable,std::vector<std::pair<double,double>>,int>*>(userdata));
-  auto nVec = std::get<2>(*static_cast<std::tuple<Callable,std::vector<std::pair<double,double>>,int>*>(userdata));
+  auto function = std::get<0>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
+  auto hyperCube = std::get<1>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
+  auto nVec = std::get<2>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
 
   int result = -1;
 
@@ -134,14 +134,16 @@ private:
 
 public:
  template<typename Callable>
- int suave_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+ int suave_result(const Callable& F, std::vector<std::pair<double,double>> _hyperCube, int nComp, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
 	parameters.nDim = _hyperCube.size();
+        parameters.nComp = nComp;
 
 	jacobian = 1.0;
 	for(const auto& limits : _hyperCube)
 	  jacobian *= limits.second - limits.first;
 
-	auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
+	//auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
+        auto data = std::tie(F,_hyperCube,parameters.nvec);
 
 	auto output = suave_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
 	return output;
@@ -149,10 +151,23 @@ public:
  }
 
 template<typename Callable, size_t NCOMP>
- int suave_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
-	return suave_result<Callable>(F,_hyperCube,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+ int suave_result(const Callable& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
+  return suave_result<Callable>(F,_hyperCube,NCOMP,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
  }
 
+template<typename Callable>
+ int suave_result(const Callable& F, std::vector<std::pair<double,double>> _hyperCube, std::vector<double>& result, std::vector<double>& errorEstimate, std::vector<double>& probability, int& stepsEvaluated){
+
+  if (result.size() == 0)
+    throw std::invalid_argument("celerium::cuba::Cuba::divonne_result: result vector must have non-zero size.");
+  
+  errorEstimate.resize(result.size());
+  probability.resize(result.size());
+
+  return suave_result<Callable>(F,_hyperCube,result.size(),result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+ }
+
+  
  /*
   *
   * DIVONNE
@@ -165,14 +180,16 @@ private:
 
 public:
  template<typename Callable>
- int divonne_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
+ int divonne_result(const Callable& F, std::vector<std::pair<double,double>> _hyperCube, int nComp, double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
 	parameters.nDim = _hyperCube.size();
+        parameters.nComp = nComp;
 
 	jacobian = 1.0;
 	for(const auto& limits : _hyperCube)
 	  jacobian *= limits.second - limits.first;
 
-	auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
+	//auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
+        auto data = std::tie(F,_hyperCube,parameters.nvec);
 
 	auto output = divonne_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
 	return output;
@@ -180,8 +197,20 @@ public:
  }
 
 template<typename Callable, size_t NCOMP>
- int divonne_result(Callable&& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
-	return divonne_result<Callable>(F,_hyperCube,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+ int divonne_result(const Callable& F, std::vector<std::pair<double,double>> _hyperCube, std::array<double,NCOMP>& result, std::array<double,NCOMP>& errorEstimate, std::array<double,NCOMP>& probability, int& stepsEvaluated){
+  return divonne_result<Callable>(F,_hyperCube,NCOMP,result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
+ }
+
+template<typename Callable>
+ int divonne_result(const Callable& F, std::vector<std::pair<double,double>> _hyperCube, std::vector<double>& result, std::vector<double>& errorEstimate, std::vector<double>& probability, int& stepsEvaluated){
+
+  if (result.size() == 0)
+    throw std::invalid_argument("celerium::cuba::Cuba::divonne_result: result vector must have non-zero size.");
+  
+  errorEstimate.resize(result.size());
+  probability.resize(result.size());
+
+  return divonne_result<Callable>(F,_hyperCube,result.size(),result.data(),errorEstimate.data(),probability.data(),stepsEvaluated);
  }
 
 }; //end of class Cuba
