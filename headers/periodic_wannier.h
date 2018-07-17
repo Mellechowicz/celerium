@@ -1,5 +1,5 @@
-#ifndef PERIODIC_LOWDIN_H
-#define PERIODIC_LOWDIN_H
+#ifndef PERIODIC_WANNIER_H
+#define PERIODIC_WANNIER_H
 
 #include "gslmatrixcomplex.h"
 #include "arithmeticvector.h"
@@ -7,8 +7,6 @@
 #include <algorithm>
 
 namespace celerium {
-
-
 
 int PeriodicOthogonalization(
     std::vector<std::pair<std::array<int, 3>,
@@ -59,16 +57,14 @@ int PeriodicOthogonalization(
         if (located_k != wave_vectors.end()) continue;
         
         wave_vectors.push_back({{(double)i0, (double)i1, (double)i2}});
-        
       }
     }
   }
 
   for (auto &k : wave_vectors) {
-    k[0] *= 2.0*M_PI/(2*wannier_range[0] + 1);
-    k[1] *= 2.0*M_PI/(2*wannier_range[1] + 1);
-    k[2] *= 2.0*M_PI/(2*wannier_range[2] + 1);
-          
+    k[0] *= 2.0*M_PI/(2.0*wannier_range[0] + 1);
+    k[1] *= 2.0*M_PI/(2.0*wannier_range[1] + 1);
+    k[2] *= 2.0*M_PI/(2.0*wannier_range[2] + 1);
   }
   
   for (const auto &k : wave_vectors) {
@@ -106,6 +102,11 @@ int PeriodicOthogonalization(
     auto k_space_overlap_copy = k_space_overlap;
     
     k_space_overlap_copy.symmetricEigenProblem(eigenvectors, eigenvalues);
+
+    for (size_t i = 0; i < n_orbitals; ++i) {
+      if (eigenvalues(i) <= 1e-14)
+        throw std::runtime_error("celerium::PeriodicOrthogonalization: Provided overlap matrix is not positive definite.");
+    }
         
     auto eigenvectors_transposed = eigenvectors;
     eigenvectors_transposed.hermitianConjugate(); 
@@ -116,11 +117,9 @@ int PeriodicOthogonalization(
         
     for (size_t i = 0; i < n_orbitals; ++i) {
       for (size_t j = 0; j < n_orbitals; ++j) {
-        gsl_complex &element =
-            *gsl_matrix_complex_ptr(eigenvectors(), i, j);
         double norm = std::sqrt(abs(normalization_matrix(j, j)));
-        GSL_REAL(element) /= norm;
-        GSL_IMAG(element) /= norm;
+        eigenvectors.real(i, j) /= norm;
+        eigenvectors.imag(i, j) /= norm;
       }
     }
         
@@ -146,6 +145,10 @@ int PeriodicOthogonalization(
                    return 1.0/sqrt(x);
                  });
 
+          // Naive wanniers
+          // entry =
+          //    eigenvectors;
+          
           for (size_t pos_index = 0;
                pos_index < n_positions;
                ++pos_index) {
@@ -200,119 +203,73 @@ int PeriodicOthogonalization(
 
 double ScalarProduct(
     const std::vector<std::pair<std::array<int, 3>, gsl::Matrix>> &real_space_overlaps,
-    const std::vector<std::array<int, 3>> orbital_positions,
+    const std::vector<std::array<int, 3>> &orbital_positions,
     const std::vector<std::vector<std::vector<double>>> &wanniers,
-    bool relax_periodic_boundary_conditions,
     size_t position1_index, size_t wannier1_index,
     size_t position2_index, size_t wannier2_index) {
 
-  double overlap {0};
 
+  auto real_space_overlaps_extended {real_space_overlaps};
+  for (const auto &real_space_overlap : real_space_overlaps) {
+    if (real_space_overlap.first[0] != 0 ||
+        real_space_overlap.first[1] != 0 ||
+        real_space_overlap.first[2] != 0)
+      real_space_overlaps_extended.push_back(
+          { {-real_space_overlap.first[0],
+             -real_space_overlap.first[1],
+             -real_space_overlap.first[2]}, real_space_overlap.second});
+    real_space_overlaps_extended.back().second.transpose();
+  }
+    
   int n0 {0};
   int n1 {0};
   int n2 {0};
 
-  if (!relax_periodic_boundary_conditions) {
-    
-    for (auto position : orbital_positions) {
-      if (position[0] > n0) n0 = position[0];
-      if (position[1] > n1) n1 = position[0];
-      if (position[2] > n2) n2 = position[0];
-    }
-
-    n0 = 2*n0 + 1;
-    n1 = 2*n1 + 1;
-    n2 = 2*n2 + 1;
+  for (auto position : orbital_positions) {
+    if (abs(position[0]) > n0) n0 = abs(position[0]);
+    if (abs(position[1]) > n1) n1 = abs(position[1]);
+    if (abs(position[2]) > n2) n2 = abs(position[2]);
   }
 
+  int n_orbital_positions = (int)orbital_positions.size();
   
-  int n = (int)orbital_positions.size();
+  size_t n_orbitals = real_space_overlaps[0].second.columnNumber();
 
-  for (int  i = 0; i < n; ++i) {
+  double result = 0;
+  
+  for (int  i = 0; i < n_orbital_positions; ++i) {
+    for (const auto &real_space_overlap : real_space_overlaps_extended) {
 
-    auto r_i = orbital_positions[i];
-    
-    for (int  j = 0; j < n; ++j) {
+      std::array<int, 3> r =
+          { (orbital_positions[i][0] + real_space_overlap.first[0]),
+            (orbital_positions[i][1] + real_space_overlap.first[1]),
+            (orbital_positions[i][2] + real_space_overlap.first[2])};
+
+        if (r[0] < -n0) r[0] += 2*n0 + 1;
+        if (r[0] >  n0) r[0] -= 2*n0 + 1;
+        if (r[1] < -n1) r[1] += 2*n1 + 1;
+        if (r[1] >  n1) r[1] -= 2*n1 + 1;
+        if (r[2] < -n2) r[2] += 2*n2 + 1;
+        if (r[2] >  n2) r[2] -= 2*n2 + 1;
+
+      int j = (r[0]+n0)*(2*n1+1)*(2*n2+1) + (r[1]+n1)*(2*n2+1) + (r[2]+n2);
       
-      auto r_j = orbital_positions[j];
-
-      std::array<int, 3> dr = { r_j[0] - r_i[0],
-                                r_j[1] - r_i[1],
-                                r_j[2] - r_i[2] };
-
-      auto located_overlap_plus =
-          std::find_if(real_space_overlaps.begin(),
-                       real_space_overlaps.end(),
-                       [&](const std::pair<std::array<int, 3>,
-                           gsl::MatrixComplex> &arg) {
-                         
-                         auto c0 = arg.first[0] == dr[0] ||
-                                   arg.first[0] == dr[0] + n0 ||
-                                   arg.first[0] == dr[0] - n0;
-
-                         auto c1 = arg.first[1] == dr[1] ||
-                                   arg.first[1] == dr[1] + n1 ||
-                                   arg.first[1] == dr[1] - n1;
-
-                         auto c2 = arg.first[2] == dr[2] ||
-                                   arg.first[2] == dr[2] + n2 ||
-                                   arg.first[2] == dr[2] - n2;
-                         
-                         return (c0 && c1 && c2);
-                       });
-
-      auto located_overlap_minus =
-          std::find_if(real_space_overlaps.begin(),
-                       real_space_overlaps.end(),
-                       [&](const std::pair<std::array<int, 3>,
-                           gsl::MatrixComplex> &arg) {
-                         
-                         auto c0 = arg.first[0] == -dr[0] ||
-                                   arg.first[0] == -dr[0] + n0 ||
-                                   arg.first[0] == -dr[0] - n0;
-
-                         auto c1 = arg.first[1] == -dr[1] ||
-                                   arg.first[1] == -dr[1] + n1 ||
-                                   arg.first[1] == -dr[1] - n1;
-
-                         auto c2 = arg.first[2] == -dr[2] ||
-                                   arg.first[2] == -dr[2] + n2 ||
-                                   arg.first[2] == -dr[2] - n2;
-                         
-                         return (c0 && c1 && c2);
-                       });
-
-      
-      //  if (located_overlap_plus == real_space_overlaps.end() &&
-      //    located_overlap_minus == real_space_overlaps.end()) continue;
-
-      size_t n_orbitals = real_space_overlaps[0].second.columnNumber();
-        
       for (size_t o1 = 0; o1 < n_orbitals; ++o1) {
         for (size_t o2 = 0; o2 < n_orbitals; ++o2) {
-          if (located_overlap_plus != real_space_overlaps.end()) {
-            overlap +=
-                wanniers[position1_index][wannier1_index][i*n_orbitals+o1]*
-                wanniers[position2_index][wannier2_index][j*n_orbitals+o2]*
-                located_overlap_plus->second(o1, o2);
-          }
-          else if (located_overlap_minus != real_space_overlaps.end()) {
-            overlap +=
-                wanniers[position1_index][wannier1_index][i*n_orbitals+o2]*
-                wanniers[position2_index][wannier2_index][j*n_orbitals+o1]*
-                located_overlap_minus->second(o2, o1);            
-          }
+          result +=
+              wanniers[position1_index][wannier1_index][i*n_orbitals+o1]*
+              wanniers[position2_index][wannier2_index][j*n_orbitals+o2]*
+              real_space_overlap.second(o1, o2);       
+          
         }
       }
-
-
       
     }
   }
 
-  return overlap;
+  return result;
 }
 
 } // end namespace celerium
 
-#endif /* PERIODIC_LOWDIN_H */
+#endif /* PERIODIC_WANNIER_H */

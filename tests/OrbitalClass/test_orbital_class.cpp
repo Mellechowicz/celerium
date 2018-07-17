@@ -16,7 +16,10 @@ int main(int argc, char *argv[])
     return c1*r*exp(-c2*r);
   };
 
-  OrbitalClass hydrogen_2p(radial_wf_2p, -13.605693009/2/2, 2, 1);
+  OrbitalClass hydrogen_2p(radial_wf_2p,       // Wave function.
+                           -13.605693009/2/2,  // energy = - Ry/4
+                           2,                  // n = 2
+                           1);                 // l = 1
 
   // hydrogen_2p represents entire set of hydrogen 2p orbitals.
   // We can demonstrate that by printing values of p_x, p_y, and p_z
