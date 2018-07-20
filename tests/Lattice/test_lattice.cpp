@@ -3,56 +3,8 @@
 
 using namespace celerium;
 
-  int fun(double *xx, double *ff) {
-    ff[0] = 0;
-    ff[1] = 0;
-    return 0;
-  }
-
-
-
 int main(int argc, char *argv[])
-{
-  /*
-  cuba::Cuba integrator(1e2, 1e1, 1e-4);
-  cuba::Cuba integrator2(1e2, 1e1, 1e-4);
-
-  std::vector<std::pair<double,double>> b3(3,std::make_pair(-10,10));
-  std::vector<std::pair<double,double>> b32(2,std::make_pair(-1,1));
-  std::vector<double> resN (2);
-  std::vector<double> errN (2);
-  std::vector<double> pN (2);
-  int steps;
-
-  std::function<int(double*,double*)> integrand;
-  std::function<int(double*,double*)> integrand2;
-  
-  integrand = [](double *xx, double *ff) {
-    ff[0] = 1;
-    ff[1] = 1;
-    //std::cout << "a";
-    return 0;
-  };
-
-  integrand2 = [](double *xx, double *ff) {
-    ff[0] = 0;
-    ff[1] = 0;
-    //std::cout << "b";
-    return 0;
-  };
-
-  integrator.suave_result(integrand, b3, resN, errN, pN, steps);
-  std::cout << "int " << resN[0] << " " << resN[1] << "\n";
-  resN[0] = 0; resN[1] = 0;
-  integrator.divonne_result(integrand2, b32, resN, errN, pN, steps);
-    
-  std::cout << "int " << resN[0] << " " << resN[1] << "\n";
-
-  return 0;
-  
-  //cubacores(1, 1);
-  */
-  
+{  
   // Load pseudopotential.
   LocalPotential potential_cr("../Potential/Cr.UPF");
 
@@ -100,7 +52,7 @@ int main(int argc, char *argv[])
 
   //lattice.PrintWannier(5, 0);
 
-  
+  /* 
   std::function<int(double*, double*)> overlap =
       [&](double *xx, double *ff) {
     lattice.UpdateWanniers({{xx[0], xx[1], xx[2]}});
@@ -120,19 +72,19 @@ int main(int argc, char *argv[])
   std::cout << "\n";
   
   return 0;
-  
+  */
 
   
 
-  size_t npt = 100;
+  size_t npt = 500;
   for (size_t i  = 1; i < npt; ++i) {
     for (size_t j  = 1; j < npt; ++j) {
 
       double x = -5.012 + 10.0/npt*i;
       double y = -5.012 + 10.0/npt*j;
       
-      lattice.UpdateWanniers({{x, y, 1.45}});
-      std::cout << x << " " << y << " " << lattice.GetWannier(5, 0) << "\n";
+      lattice.UpdateWanniers({{x, y, 1.0}});
+      //std::cout << x << " " << y << " " << lattice.GetWannier(5, 0) << "\n";
 
     /*
     std::vector<double> result;

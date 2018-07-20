@@ -41,6 +41,8 @@ namespace celerium{
     // FUNCTIONS
     
     size_t size() const{return N;}
+
+    T* data() {return body.data();}
     
     ArithmeticVectorN versor(){
 	auto mynorm = norm(*this);

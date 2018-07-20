@@ -80,14 +80,19 @@ Attempted to add two lattice sites with the same name.");
 
   size_t NSites() const {return this->lattice_sites.size();}
 
-  void EvaluateOrbitals(const ArithmeticVector &coords,
+  void EvaluateOrbitals(const double coords [],
                         double result []) const {
  
     size_t i = 0;
     double radial_wf_value;
 
     for (const auto &lattice_site : this->lattice_sites) {
-      double r = (coords - lattice_site.position).length();
+      double r = std::pow(coords[0] - lattice_site.position[0], 2) *
+                 std::pow(coords[1] - lattice_site.position[1], 2) *
+                 std::pow(coords[2] - lattice_site.position[2], 2);
+
+      r = std::sqrt(r);
+      
       for (const auto &orbital_class :
                this->elements[lattice_site.element_index].GetOrbitalClasses()) {
         radial_wf_value = orbital_class.GetRadialWF()(r);
@@ -104,7 +109,7 @@ Attempted to add two lattice sites with the same name.");
     }  // lattice sites
   }
 
-  void EvaluateOrbitals(const ArithmeticVector &coords,
+  void EvaluateOrbitals(const double coords [],
                         std::vector<double> &result) const {
     result.resize(this->n_orbitals);
     EvaluateOrbitals(coords, result.data());

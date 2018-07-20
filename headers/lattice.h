@@ -248,7 +248,7 @@ class Lattice {
 
     for (size_t i = 0; i < n_orbital_positions; ++i) {
       auto r = coords + this->wannier_data.orbital_positions_absolute[i];
-      this->elementary_cell.EvaluateOrbitals(r,
+      this->elementary_cell.EvaluateOrbitals(r.data(),
                                              this->evaluated_orbitals.data()
                                              + i*n_orbitals);
     }

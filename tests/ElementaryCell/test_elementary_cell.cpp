@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   std::function<int(const double *, double *)> integrand;
   integrand = [&](const double *xx, double *ff) {
     std::vector<double> wfs;
-    elementary_cell.EvaluateOrbitals({{xx[0], xx[1], xx[2]}}, wfs);
+    elementary_cell.EvaluateOrbitals(xx, wfs);
     for (size_t i = 0; i < 12; ++i)
       ff[i] = wfs[i]*wfs[i];
     return 0;
