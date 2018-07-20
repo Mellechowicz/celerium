@@ -22,9 +22,9 @@ template<typename Callable>
 int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
 	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
 
-  auto function = std::get<0>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
-  auto hyperCube = std::get<1>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
-  auto nVec = std::get<2>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
+  auto &function = std::get<0>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
+  auto &hyperCube = std::get<1>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
+  auto &nVec = std::get<2>(*static_cast<std::tuple<Callable&,std::vector<std::pair<double,double>>&,int&>*>(userdata));
 
   int result = -1;
 
@@ -191,7 +191,7 @@ public:
 	//auto data = std::make_tuple(F,_hyperCube,parameters.nvec);
         auto data = std::tie(F,_hyperCube,parameters.nvec);
 
-	auto output = divonne_explicit(cFunction<Callable>,static_cast<void*>(&data),result,errorEstimate,probability,stepsEvaluated);
+	auto output = divonne_explicit(cFunction<Callable>,&data,result,errorEstimate,probability,stepsEvaluated);
 	return output;
 
  }

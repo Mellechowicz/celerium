@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
   // Initialize element using chromium pseudopotential.
   Element chromium("Cr",            // Element name.
                    potential_cr,    // Potential.
-                   {});             // Do not add any orbitals classes manually.
+                   {});             // Do not add any orbital classes manually.
 
   // Now add 3d-like orbitals. Note that mesh is not passed as an argument here
   // as it is provided by LocalPotential object. Also, solver parameters
@@ -26,8 +26,6 @@ int main(int argc, char *argv[])
   // Add 4s-like orbitals.
   chromium.AddOrbitalClass(4,         // n = 4
                            0);        // l = 0
-
-  
 
   // Define basis vectors for Cr.
   double a {2.91};

@@ -4,7 +4,7 @@ celerium::cuba::Cuba::Cuba(int _maxeval, int _mineval, double _epsrel):
 	parameters(1, _maxeval,_mineval,_epsrel){ 
 		seed_generator = std::mt19937(std::random_device()());
 		uniform_distribution = std::uniform_int_distribution<>(0,std::numeric_limits<int>::max());
-		spin = NULL;
+		spin = 0;
 
 		parameters.epsabs = _epsrel/64;
 
@@ -17,13 +17,15 @@ int celerium::cuba::Cuba::suave_explicit(int (*function)(const int*, const doubl
 		double result[], double errorEstimate[], double probability[], int& stepsEvaluated){
 	parameters.seed = uniform_distribution(seed_generator);
 	int nregions;
-        
+      
 	Suave(parameters.nDim, parameters.nComp, function, userdata, parameters.nvec,
 			parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
 			parameters.mineval, parameters.maxeval, parameters.nnew, parameters.nmin, parameters.flatness,
 			parameters.statefile, &spin, &nregions, &stepsEvaluated, 
 			&hasFailed, result, errorEstimate, probability);
 
+        cubawait(&spin);
+        
 	for(int i=0; i<(parameters.nComp*parameters.nvec); ++i){
 		result[i]        *= jacobian;
 		errorEstimate[i] *= jacobian;
@@ -45,6 +47,8 @@ int celerium::cuba::Cuba::divonne_explicit(int (*function)(const int*, const dou
 			parameters.statefile, &spin, &nregions, &stepsEvaluated, 
 			&hasFailed, result, errorEstimate, probability);
 
+        cubawait(&spin);
+        
 	for(int i=0; i<parameters.nComp; ++i){
 		result[i]        *= jacobian;
 		errorEstimate[i] *= jacobian;

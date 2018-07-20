@@ -17,7 +17,7 @@ namespace celerium{
 namespace CUBA{
 
 template<auto *function, size_t NDIM>
-static int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
+ int cFunction(const int *ndim __attribute__((unused)), const double x[] __attribute__((unused)),
 	      const int *ncomp __attribute__((unused)), double f[] __attribute__((unused)), void *userdata __attribute__((unused))){
 
   auto hyperCube = *static_cast<std::array<std::pair<double,double>,NDIM>*>(userdata);

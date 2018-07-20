@@ -199,6 +199,8 @@ Attempted to add two lattice sites with the same name.");
   }
 */
 
+  const Basis &GetBasis() const {return this->basis;}
+
  private:
   size_t n_orbitals; // Total number of orbitals in the unit cell.
   std::vector<lattice_site_struct> lattice_sites;  

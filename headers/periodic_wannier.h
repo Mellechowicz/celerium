@@ -11,7 +11,7 @@ namespace celerium {
 int PeriodicOthogonalization(
     std::vector<std::pair<std::array<int, 3>,
                           gsl::Matrix>> &real_space_overlaps,
-    const std::array<size_t, 3> &wannier_range,
+    const std::array<int, 3> &wannier_range,
     const std::vector<std::array<int, 3>> &wannier_positions,
     std::vector<std::array<int, 3>> &orbital_positions,
     std::vector<std::vector<std::vector<double>>> &coefficients) {

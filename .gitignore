@@ -81,3 +81,6 @@ TAGS
 # Compilation database
 *.json
 *.yaml
+
+# Data files
+*.dat

@@ -35,7 +35,7 @@ vectors must be linearly independent.");
   
   // Getters.
 
-  const std::array<ArithmeticVector, 3> &GetVectors() {return this->basis;}
+  const std::array<ArithmeticVector, 3> &GetVectors() const {return this->basis;}
 
  private:
   std::array<ArithmeticVector, 3> basis;
