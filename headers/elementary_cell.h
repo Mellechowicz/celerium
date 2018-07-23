@@ -85,24 +85,22 @@ Attempted to add two lattice sites with the same name.");
  
     size_t i = 0;
     double radial_wf_value;
-
+    double r, x0, x1, x2;
+    
     for (const auto &lattice_site : this->lattice_sites) {
-      double r = std::pow(coords[0] - lattice_site.position[0], 2) *
-                 std::pow(coords[1] - lattice_site.position[1], 2) *
-                 std::pow(coords[2] - lattice_site.position[2], 2);
 
-      r = std::sqrt(r);
+      x0 = coords[0] - lattice_site.position[0];
+      x1 = coords[1] - lattice_site.position[1];
+      x2 = coords[2] - lattice_site.position[2];  
+      r = std::sqrt(x0*x0 + x1*x1 + x2*x2);
       
       for (const auto &orbital_class :
                this->elements[lattice_site.element_index].GetOrbitalClasses()) {
         radial_wf_value = orbital_class.GetRadialWF()(r);
         for (int m : orbital_class.GetActiveMValues()) {
-          result[i] = radial_wf_value *
-                      RealSphericalHarmonic(orbital_class.GetL(),
-                                            m,
-                                            coords[0]-lattice_site.position[0],
-                                            coords[1]-lattice_site.position[1],
-                                            coords[2]-lattice_site.position[2]);
+          result[i] =
+              radial_wf_value *
+              RealSphericalHarmonic(orbital_class.GetL(), m, x0, x1, x2);
           i++;
         }  // active m values
       }  // orbital classes

@@ -65,13 +65,53 @@ int main(int argc, char *argv[])
       { {2, 2, 0}, gsl::Matrix(n_orbitals, {0.0, 0.0, 0.0, 0.0}) });
 
 
+  WannierData wannier_data;
+
+  std::array<ArithmeticVector, 3> basis;
+  basis[0] = ArithmeticVector({1, 0, 0});
+  basis[1] = ArithmeticVector({0, 1, 0});
+  basis[2] = ArithmeticVector({0, 0, 1});
+  
+  wannier_data.Initialize(orbital_overlaps, {{3, 3, 0}}, {{0, 0, 0}}, basis, 0.1);
+
+  for (const auto& orbital : wannier_data.GetOrbitalPositions()) {
+    std::cout << orbital.absolute_position << "\n";
+  }
+
+  
+  for (const auto& wannier : wannier_data.GetWanniers()) {
+    std::cout << "Wannier #" << wannier.wannier_index << ":\n";
+    for (const auto &extended_coeff : wannier.extended_coeffs) {
+      std::cout << "(";
+      std::cout <<
+          wannier_data.GetOrbitalPositions()[extended_coeff.orbital_index].cell_position[0] << ", ";
+      std::cout <<
+          wannier_data.GetOrbitalPositions()[extended_coeff.orbital_index].cell_position[1] << ", ";
+      std::cout <<
+          wannier_data.GetOrbitalPositions()[extended_coeff.orbital_index].cell_position[2] << "), ";
+
+      std::cout << extended_coeff.orbital_index << ": ";
+      std::cout << extended_coeff.coeff << "\n";
+    }
+    std::cout << "\n\n";
+  }
+
+
+  std::cout << "\n\n";
+
+  /*
   PeriodicOthogonalization(
       orbital_overlaps,
       {{5, 5, 0}},             // Range of orbitals contributing to Wannier functions.
       {{0, 0, 0}, {1, 0, 0}},  // Requested positions of Wannier functions.
       orbital_positions,
       wannier_coefficients);
+  */
 
+
+
+
+  /*
   std::cout << "\n\n";
   
   for (size_t wannier_index = 0;
@@ -140,6 +180,6 @@ int main(int argc, char *argv[])
   }
         
   std::cout << "\n\nTest finished...\n\n";
-
+  */
   return 0;
 }

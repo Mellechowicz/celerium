@@ -46,6 +46,7 @@ AC_CONFIG_FILES([Makefile
 		 tests/ElementaryCell/Makefile
 		 tests/CubaWrapper/Makefile
 		 tests/PeriodicLowdin/Makefile
-		 tests/Lattice/Makefile])
+		 tests/Lattice/Makefile
+		 tests/Interpolator3d/Makefile])
 
 AC_OUTPUT

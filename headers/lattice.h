@@ -10,94 +10,7 @@
 #include <iomanip>
 #include <fstream>
 
-
 namespace celerium {
-
-
-struct wannier_data_struct {
-  std::vector<std::array<int, 3>> wannier_positions;
-  std::vector<std::array<int, 3>> orbital_positions;
-  std::vector<ArithmeticVector> orbital_positions_absolute;
-  std::vector<std::vector<std::vector<double>>> wannier_coefficients;
-
-  int Save(const char* file_name) {
-    std::ofstream file(file_name, std::ofstream::trunc);
-    file << wannier_positions.size() << " ";
-    file << orbital_positions.size() << " ";
-    file << wannier_coefficients.front().size() << " \n\n";
-    
-    for (auto &position : wannier_positions)
-      file << position[0] << " " << position[1] << " " << position[2] << " "; 
-    file << "\n\n";
-    for (auto &position : orbital_positions)
-      file << position[0] << " " << position[1] << " " << position[2] << " ";
-    file << "\n\n";
-    for (auto &position : orbital_positions_absolute)
-      file << position[0] << " " << position[1] << " " << position[2] << " ";
-    file << "\n\n";
-    for (const auto &coefficients_one_position : wannier_coefficients) {
-      for (const auto &coefficients_one_wannier : coefficients_one_position) { 
-        for (const auto &coefficient : coefficients_one_wannier) {
-          file << coefficient << " ";
-        }
-        file << "\n\n";
-      }
-      file << "\n\n";
-    }   
-    file.close();
-    return 0;
-  }
-
-  
-  int Load(const char* file_name) {
-    std::ifstream file(file_name);
-    size_t n_wannier_pos;
-    size_t n_orb_pos;
-    size_t n_wannier;
-    
-    file >> n_wannier_pos >> n_orb_pos >> n_wannier;
-
-    this->wannier_positions.resize(n_wannier_pos);
-    this->orbital_positions.resize(n_orb_pos);
-    this->orbital_positions_absolute.resize(n_orb_pos);
-    this->wannier_coefficients =
-        std::vector<std::vector<std::vector<double>>>(
-            n_wannier_pos,
-            std::vector<std::vector<double>>(
-                n_wannier,
-                std::vector<double>(n_orb_pos*n_wannier, 0.0)));
-
-    for (size_t i_wannier_pos = 0; i_wannier_pos < n_wannier_pos; ++i_wannier_pos)
-      file >> wannier_positions[i_wannier_pos][0] >>
-              wannier_positions[i_wannier_pos][1] >>
-              wannier_positions[i_wannier_pos][2]; 
-
-    for (size_t i_orb_pos = 0; i_orb_pos < n_orb_pos; ++i_orb_pos)
-      file >> orbital_positions[i_orb_pos][0] >>
-              orbital_positions[i_orb_pos][1] >>
-              orbital_positions[i_orb_pos][2];
-
-    for (size_t i_orb_pos = 0; i_orb_pos < n_orb_pos; ++i_orb_pos)
-      file >> orbital_positions_absolute[i_orb_pos][0] >>
-              orbital_positions_absolute[i_orb_pos][1] >>
-              orbital_positions_absolute[i_orb_pos][2]; 
-
-    for (size_t i_wannier_pos = 0; i_wannier_pos < n_wannier_pos; ++i_wannier_pos) {
-      for (size_t i_wannier = 0; i_wannier < n_wannier; ++i_wannier) { 
-        for (size_t i = 0; i < n_wannier*n_orb_pos; ++i) {
-          file >> wannier_coefficients[i_wannier_pos][i_wannier][i];
-        }
-        //file << "\n";
-      }
-      //file << "\n";
-    }   
-    
-    file.close();
-    return 0;
-  }
-  
-};
-
 
 template <class ElementaryCell>
 class Lattice {
@@ -111,14 +24,10 @@ class Lattice {
       const std::array<int, 3> &overlap_range,
       const std::array<int, 3> &wannier_range,
       const std::vector<std::array<int, 3>> &wannier_positions,
+      const std::vector<std::pair<double,double>> &integration_limits,
       cuba::Cuba &cuba_engine,
+      double wannier_coefficient_cutoff,
       bool verbose) {
-
-    this->wannier_data.wannier_positions = wannier_positions;
-    this->wannier_data.orbital_positions.clear();
-    this->wannier_data.orbital_positions_absolute.clear();
-    this->wannier_data.wannier_coefficients.clear();
-
 
     std::vector<std::pair<std::array<int, 3>, gsl::Matrix>> orbital_overlaps;
     std::vector<std::array<int, 3>> drs;
@@ -139,46 +48,43 @@ class Lattice {
     }
  
     for (size_t i_dr = 0; i_dr < drs.size(); ++i_dr) {
-          size_t n_orbitals = elementary_cell.NOrbitals();
+      size_t n_orbitals = elementary_cell.NOrbitals();
 
-          std::vector<std::pair<double,double>> b3(3,std::make_pair(-10,10));
-    std::vector<double> resN (n_orbitals*n_orbitals);
-    std::vector<double> errN (n_orbitals*n_orbitals);
-    std::vector<double> pN (n_orbitals*n_orbitals);  
-    int steps = 0;
-    gsl::Matrix overlap_matrix(n_orbitals);
+      std::vector<double> resN (n_orbitals*n_orbitals);
+      std::vector<double> errN (n_orbitals*n_orbitals);
+      std::vector<double> pN (n_orbitals*n_orbitals);  
+      int steps = 0;
+      gsl::Matrix overlap_matrix(n_orbitals);
 
 
       std::function<int(const double *, double *)> integrand;
       integrand = [&](const double *xx, double *ff) {
-      std::vector<double> orbitals1 (n_orbitals);
-      std::vector<double> orbitals2 (n_orbitals);
-      ArithmeticVector xx_arr({xx[0], xx[1], xx[2]});
-      this->elementary_cell.EvaluateOrbitals(xx_arr, orbitals1);
-      this->EvaluateOrbitals(xx_arr, drs[i_dr], orbitals2);
+        std::vector<double> orbitals1 (n_orbitals);
+        std::vector<double> orbitals2 (n_orbitals);
+        ArithmeticVector xx_arr({xx[0], xx[1], xx[2]});
+        this->elementary_cell.EvaluateOrbitals(xx, orbitals1);
+        this->EvaluateOrbitals(xx_arr, drs[i_dr], orbitals2);
       
-      size_t i = 0;
-      for (size_t i1 = 0; i1 < n_orbitals; ++i1) {
-        for (size_t i2 = 0; i2 < n_orbitals; ++i2) {
-          ff[i] = orbitals1[i1]*orbitals2[i2];
-          ++i;
+        size_t i = 0;
+        for (size_t i1 = 0; i1 < n_orbitals; ++i1) {
+          for (size_t i2 = 0; i2 < n_orbitals; ++i2) {
+            ff[i] = orbitals1[i1]*orbitals2[i2];
+            ++i;
+          }
         }
-      }
-      return 0;
-    };
+        return 0;
+      };
 
-
-      cuba_engine.divonne_result(integrand, b3, resN, errN, pN, steps);
+      cuba_engine.divonne_result(integrand, integration_limits, resN, errN, pN, steps);
 
       if (verbose) {
         std::cerr << std::fixed << std::setprecision(4);
       
-        std::cerr << "Position: (" << drs[i_dr][0] << ", " << drs[i_dr][1] << ", " <<
+        std::cerr << "Position: (" << drs[i_dr][0]
+                  << ", " << drs[i_dr][1] << ", " <<
             drs[i_dr][2] << "). Overlap matrix " <<
             i_dr + 1 << " / " << drs.size() << ":\n";
       }
-      
-      
       
       for (size_t i  = 0; i < elementary_cell.NOrbitals(); ++i) {
         for (size_t j  = 0; j < elementary_cell.NOrbitals(); ++j) {
@@ -193,34 +99,31 @@ class Lattice {
 
       if (verbose) std::cerr << "\n";
     }
-    
-    PeriodicOthogonalization(orbital_overlaps,
-                             wannier_range,
-                             this->wannier_data.wannier_positions,
-                             this->wannier_data.orbital_positions,
-                             this->wannier_data.wannier_coefficients);
 
-    for (auto &orbital_position : this->wannier_data.orbital_positions) {
-       auto r = 
-        elementary_cell.GetBasis().GetVectors()[0]*(double)orbital_position[0]+
-        elementary_cell.GetBasis().GetVectors()[1]*(double)orbital_position[1]+
-        elementary_cell.GetBasis().GetVectors()[2]*(double)orbital_position[2];
-      
-      this->wannier_data.orbital_positions_absolute.push_back(r);
-    }
-    
+    wannier_data.Initialize(orbital_overlaps,
+                            wannier_range,
+                            wannier_positions,
+                            this->elementary_cell.GetBasis().GetVectors(),
+                            wannier_coefficient_cutoff);
+
+    size_t n_orbitals = this->elementary_cell.NOrbitals();
+    size_t n_orbital_positions = this->wannier_data.GetOrbitalPositions().size();
+    this->evaluated_orbitals.resize(n_orbitals*n_orbital_positions);
+        
     return 0;
   }
 
+  
   void SaveWannierDataToFile(const char *file_name) {
-    this->wannier_data.Save(file_name);
+    this->wannier_data.SaveToFile(file_name);
   }
 
   void LoadWannierDataFromFile(const char *file_name) {
-    this->wannier_data.Load(file_name);
+    this->wannier_data.LoadFromFile(file_name);
+    size_t n_orbtial_positions = this->wannier_data.GetOrbitalPositions().size();
+    size_t n_orbitals = this->elementary_cell.NOrbitals();
+    evaluated_orbitals.resize(n_orbitals*n_orbtial_positions);
   }
-
-
 
 
   void EvaluateOrbitals(const ArithmeticVector &coords,
@@ -234,72 +137,66 @@ class Lattice {
              basis[1]*((double)orbital_position[1])+
              basis[2]*((double)orbital_position[2]);
     
-    this->elementary_cell.EvaluateOrbitals(r, result);
+    this->elementary_cell.EvaluateOrbitals(r.data(), result);
   }
 
   void UpdateWanniers(const ArithmeticVector &coords) {
 
-    const size_t n_orbitals =
-        this->elementary_cell.NOrbitals();
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
     const size_t n_orbital_positions =
-        this->wannier_data.orbital_positions.size();
-
-    this->evaluated_orbitals.resize(n_orbitals*n_orbital_positions);
-
+        this->wannier_data.GetOrbitalPositions().size();
+      
     for (size_t i = 0; i < n_orbital_positions; ++i) {
-      auto r = coords + this->wannier_data.orbital_positions_absolute[i];
+      const auto r = coords +
+                     this->wannier_data.GetOrbitalPositions()[i].absolute_position;
       this->elementary_cell.EvaluateOrbitals(r.data(),
-                                             this->evaluated_orbitals.data()
-                                             + i*n_orbitals);
+                                             this->evaluated_orbitals.data() +
+                                             i*n_orbitals);
     }
   }
 
-  double GetWannier(size_t wannier_index, size_t wannier_position_index) {
+  double GetWannier(size_t wannier_position_index, size_t wannier_index) const {
+
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
     
-    const auto &coeffs =
-        this->wannier_data.wannier_coefficients[wannier_position_index]
-                                               [wannier_index];
+    const auto &extended_coeffs =
+        this->wannier_data.GetWanniers()
+        [wannier_position_index*n_orbitals + wannier_index].extended_coeffs;
 
-    double result = 0.0;
-    for (size_t i = 0; i < coeffs.size(); ++i)
-      result += coeffs[i]*this->evaluated_orbitals[i];
+    double result {0};
 
+    for (const auto& extended_coeff : extended_coeffs) {
+      result += extended_coeff.coeff *
+          this->evaluated_orbitals[n_orbitals*extended_coeff.position_index +
+                                   extended_coeff.orbital_index];
+    }
+    
     return result;
   }
-  
-  void PrintWannier(size_t wannier_index, size_t wannier_position_index) {
 
-    size_t n_orbitals = elementary_cell.NOrbitals();
-  
-    for (size_t orbital_position_index = 0;
-         orbital_position_index < wannier_data.orbital_positions.size();
-         ++orbital_position_index) {
+  void GetWanniers(size_t wannier_position_index, double result []) const {
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
+    const size_t shift = wannier_position_index*n_orbitals;
+    
+    for (size_t i = 0; i < n_orbitals; ++i) {
+      const auto &extended_coeffs =
+          this->wannier_data.GetWanniers()
+          [shift + i].extended_coeffs;
 
-      std::stringstream ss;
-      ss << "(";
-      ss << wannier_data.orbital_positions[orbital_position_index][0] << " ";
-      ss << wannier_data.orbital_positions[orbital_position_index][1] << " ";
-      ss << wannier_data.orbital_positions[orbital_position_index][2] << "):";
-      
-      std::cout << std::setw(8) << std::left << ss.str();
-      
-      for (size_t orbital_index = 0;
-           orbital_index < n_orbitals;
-           ++orbital_index) {
-        std::cout << std::setw(6) <<
-            wannier_data.wannier_coefficients[wannier_position_index][wannier_index]
-            [orbital_index+n_orbitals*orbital_position_index] << " ";
-      } // orbtial index
-      std::cout << "\n";
-    } // orbital positions
-    std::cout << "\n";
-
+      result[i] = 0;
+      for (const auto& extended_coeff : extended_coeffs) {
+        result[i] += extended_coeff.coeff *
+             this->evaluated_orbitals[n_orbitals*extended_coeff.position_index +
+                                      extended_coeff.orbital_index];
+      }
+    }
   }
+  
 
   
   private:
   ElementaryCell elementary_cell;
-  wannier_data_struct wannier_data;
+  WannierData wannier_data;
   std::vector<double> evaluated_orbitals;
 };
 

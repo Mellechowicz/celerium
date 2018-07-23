@@ -48,23 +48,22 @@ int main(int argc, char *argv[])
 
   std::cout << "Normalization test:\n";
   
-  std::function<int(const double *, double *)> integrand;
-  integrand = [&](const double *xx, double *ff) {
-    std::vector<double> wfs;
-    elementary_cell.EvaluateOrbitals(xx, wfs);
-    for (size_t i = 0; i < 12; ++i)
-      ff[i] = wfs[i]*wfs[i];
-    return 0;
-  };
-
-  cuba::Cuba engine(1e7,1e5,1e-3);
+  cuba::Cuba engine(1e8,1e5,1e-4);
   
   std::vector<std::pair<double,double>> b3(3,std::make_pair(-10,10));
   std::vector<double> resN (12), errN (12), pN (12);  
   int steps = 0;
 
+  std::function<int(const double *, double *)> integrand;
+  integrand = [&](const double *xx, double *ff) {
+    elementary_cell.EvaluateOrbitals(xx, ff);
+    for (size_t i = 0; i < 12; ++i) ff[i] *= ff[i];
+    return 0;
+  };
+
   engine.divonne_result(integrand, b3, resN, errN, pN, steps);
 
+  
   for (size_t i  = 0; i < resN.size(); ++i)
     std::cout << "\nint: "
               << resN[i] << " "

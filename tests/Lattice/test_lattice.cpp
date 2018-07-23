@@ -39,62 +39,140 @@ int main(int argc, char *argv[])
   Lattice lattice(elementary_cell);
 
  
-  //cuba::Cuba engine(1e9,1e4,1e-4);
 
-  cuba::Cuba engine(1e7,1e5,1e-4);
+
+  cuba::Cuba engine(5*1e5,5*1e5,1e-4);
+  engine.parameters.flatness = 3000;
+  engine.parameters.nnew = 3000;
+  engine.parameters.nmin = 1000;
+
+
+  std::vector<std::pair<double, double>> integration_limits(3, {-15, 15});
   
-  //lattice.CalculateWannierCoefficients({{2, 2, 2}}, {{2, 2, 2}}, {{0, 0, 0}}, engine, true);
-  //lattice.SaveWannierDataToFile("data.dat");
 
-  //return 0;
+  /*
+  lattice.CalculateWannierCoefficients({{2, 2, 2}},
+                                       {{4, 4, 4}},
+                                       {{0, 0, 0}, {1, 0, 0}},
+                                       integration_limits,
+                                       engine,
+                                       0.0001,
+                                       true);
+  
+  lattice.SaveWannierDataToFile("data.dat");
 
+  return 0;
+  */
   lattice.LoadWannierDataFromFile("data.dat");
 
-  //lattice.PrintWannier(5, 0);
 
-  /* 
+  size_t nmax = 12;
+  
   std::function<int(double*, double*)> overlap =
       [&](double *xx, double *ff) {
+    double wanniers_r1 [12];
+    double wanniers_r2 [12];
+    
     lattice.UpdateWanniers({{xx[0], xx[1], xx[2]}});
-    ff[0] = lattice.GetWannier(0, 0)*lattice.GetWannier(0, 0);
+    lattice.GetWanniers(0, wanniers_r1);
+    
+    lattice.UpdateWanniers({{xx[3], xx[4], xx[5]}});
+    lattice.GetWanniers(0, wanniers_r2);
+    
+    for (size_t i = 0; i < nmax; ++i) {
+      ff[i] = wanniers_r1[i]*wanniers_r1[i]*wanniers_r2[i]*wanniers_r2[i];
+    double dr =
+        (xx[0]-xx[3])*(xx[0]-xx[3]) + 
+        (xx[1]-xx[4])*(xx[1]-xx[4]) +
+        (xx[2]-xx[5])*(xx[2]-xx[5]);
+    dr = std::sqrt(dr);
+    ff[i] *= 14.399645352/dr;
+    }
     return 0;
   };
 
-  std::vector<double> resN (1);
-  std::vector<double> errN (1);
-  std::vector<double> pN (1);
+  std::vector<double> resN (nmax);
+  std::vector<double> errN (nmax);
+  std::vector<double> pN (nmax);
   int steps;
-  std::vector<std::pair<double,double>> b3(3,std::make_pair(-10,10));
-  
-  engine.divonne_result(overlap, b3, resN, errN, pN, steps);
 
-  std::cout << resN[0] << " ";
+  std::vector<std::pair<double,double>> b6(6,std::make_pair(-10,10));  
+  engine.suave_result(overlap, b6, resN, errN, pN, steps);
+
+    size_t l {0};
+    for (size_t i = 0; i < nmax; ++i) {
+      std::cout << resN[l] << "     " << errN[l] << "   " << steps << "\n";
+      ++l;
+    }
+
+
   std::cout << "\n";
   
   return 0;
-  */
+
+
+
+
 
   
+  /*
+  size_t nmax = 12;
+  
+  std::function<int(double*, double*)> overlap =
+      [&](double *xx, double *ff) {
+    lattice.UpdateWanniers({{xx[0], xx[1], xx[2]}});
+    double wanniers [12];
+    lattice.GetWanniers(0, wanniers);
+    size_t l {0};
+    for (size_t i = 0; i < nmax; ++i) {
+      for (size_t j = 0; j < nmax; ++j) {
+        ff[l] = wanniers[i]*wanniers[j];
+        ++l;
+      }
+    }
+    return 0;
+  };
 
-  size_t npt = 500;
+  std::vector<double> resN (nmax*nmax);
+  std::vector<double> errN (nmax*nmax);
+  std::vector<double> pN (nmax*nmax);
+  int steps;
+  std::vector<std::pair<double,double>> b3(3,std::make_pair(-10,10));
+  
+  engine.suave_result(overlap, b3, resN, errN, pN, steps);
+
+    size_t l {0};
+    for (size_t i = 0; i < nmax; ++i) {
+      for (size_t j = 0; j < nmax; ++j) {
+        std::cout << resN[l] << "     " << errN[l] << "   " << steps << "\n";
+        ++l;
+      }
+
+      std::cout << "\n\n\n";
+    }
+
+  std::cout << "\n";
+  
+  return 0;
+*/  
+
+  
+  /*
+  size_t npt = 100;
   for (size_t i  = 1; i < npt; ++i) {
     for (size_t j  = 1; j < npt; ++j) {
-
-      double x = -5.012 + 10.0/npt*i;
-      double y = -5.012 + 10.0/npt*j;
+          for (size_t k  = 1; k < npt; ++k) {
       
-      lattice.UpdateWanniers({{x, y, 1.0}});
-      //std::cout << x << " " << y << " " << lattice.GetWannier(5, 0) << "\n";
 
-    /*
-    std::vector<double> result;
-    lattice.EvaluateOrbitals({{0.1*i, 0.00, 0.00}},
-                     {{0, 0, 0}},
-                     result);
-
-    std::cout << result[5] << "\n";
-    */
+            double x = -5.012 + 10.0/npt*i;
+            double y = -5.012 + 10.0/npt*j;
+            double z = -5.012 + 10.0/npt*k;
+      
+            lattice.UpdateWanniers({{x, y, z}});
+            // std::cout << x << " " << y << " " << lattice.GetWannier(0, 11) << "\n";
+          }
     }
   }
+  */
   return 0;
 }
