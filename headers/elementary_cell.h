@@ -14,8 +14,7 @@ struct lattice_site_struct {
   ArithmeticVector position;
 };
 
-
-template <class Element = Element<Interpolator, OrbitalClass<Interpolator>>>
+template <class Element = Element<gsl::Interpolator, OrbitalClass<gsl::Interpolator>>>
 class ElementaryCell {
 
  public:
@@ -105,6 +104,23 @@ Attempted to add two lattice sites with the same name.");
         }  // active m values
       }  // orbital classes
     }  // lattice sites
+  }
+
+
+  void GetOrbitalDescriptions(std::vector<std::string> &descriptions) {
+    descriptions.clear();
+    for (const auto &lattice_site : this->lattice_sites) {
+      for (const auto &orbital_class :
+               this->elements[lattice_site.element_index].GetOrbitalClasses()) {
+        for (int m : orbital_class.GetActiveMValues()) {
+          std::stringstream ss("");
+          ss << lattice_site.name << ", n = " << orbital_class.GetN()
+             << ", l = " << orbital_class.GetL()
+             << ", m = " << m;
+          descriptions.push_back(ss.str());
+        }
+      }
+    }
   }
 
   void EvaluateOrbitals(const double coords [],
@@ -214,3 +230,4 @@ Attempted to add two lattice sites with the same name.");
 } // end namespace celerium
 
 #endif /* ELEMENTARY_CELL_H */
+

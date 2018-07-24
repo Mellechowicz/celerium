@@ -36,7 +36,7 @@ struct eigenstate_struct {
   double energy;
   double energy_error;
   int nodes;
-  std::vector<sample_struct> wave_function;
+  std::vector<celerium::gsl::sample_struct> wave_function;
 };
 
 template <class Potential>
@@ -80,7 +80,7 @@ class WFSolver {
  public:
 
   int GetEigenstate(int n, int l,
-                     const std::vector<sample_struct> &potential,
+                    const std::vector<celerium::gsl::sample_struct> &potential,
                      const std::vector<double> &result_mesh,
                      eigenstate_struct &eigenstate) {
 
@@ -92,7 +92,7 @@ must not be empty.");
     for (auto s : potential)
       if (s.x > r_max) r_max = s.x;
 
-    Interpolator interp(potential);
+    celerium::gsl::Interpolator interp(potential);
     
     int status = FindEigenstate(interp,
                                 n,
@@ -107,7 +107,7 @@ must not be empty.");
                                 eigenstate,
                                 this->logs);
 
-    Interpolator interp_wf(eigenstate.wave_function);
+    gsl::Interpolator interp_wf(eigenstate.wave_function);
 
     eigenstate.wave_function.clear();
     
@@ -124,7 +124,7 @@ must not be empty.");
                      const std::vector<double> &result_mesh,
                     eigenstate_struct &eigenstate) {
 
-    std::vector<sample_struct> potential;
+    std::vector<gsl::sample_struct> potential;
 
     for (size_t i = 0; i < potential_mesh.size(); ++i)
       potential.push_back({potential_mesh[i], potential_values[i]});

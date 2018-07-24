@@ -15,6 +15,9 @@
 
 namespace celerium {
 
+namespace gsl {
+
+
 // Stores a single sample:
 // x - argument
 // y - function value
@@ -112,6 +115,9 @@ class Interpolator {
 
 // Include sources.
 #include "../lib/interpolator.cpp"
+
+
+}  // end namespace gsl
 
 } // end namespace celerium;
 

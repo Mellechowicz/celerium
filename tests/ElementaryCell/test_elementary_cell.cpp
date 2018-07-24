@@ -17,9 +17,9 @@ int main(int argc, char *argv[])
                    potential_cr,    // Potential.
                    {});             // Do not add any orbital classes manually.
 
-  // Now add 3d-like orbitals. Note that mesh is not passed as an argument here
-  // as it is provided by LocalPotential object. Also, solver parameters
-  // are not specified (default values are used).
+  // Now add 3d-like orbitals. Note that sampling mesh is not passed as an 
+  // argument here as it is provided by LocalPotential object. Also, solver 
+  // parameters are not specified (default values are used).
   chromium.AddOrbitalClass(3,         // n = 3
                            2);        // l = 2
                            
@@ -40,13 +40,19 @@ int main(int argc, char *argv[])
   elementary_cell.AddSite("Cr(2)", chromium, {{a*0.5, a*0.5, a*0.5}});
 
   /////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////
 
-  std::cout << "Number of orbitals: " <<  elementary_cell.NOrbitals() << "\n\n";
+  std::cout << "Number of orbitals in the elementary cell: "
+            <<  elementary_cell.NOrbitals() << "\n\n";
 
-  std::cout << "Normalization test:\n";
+  std::vector<std::string> orbital_descriptions;
+  elementary_cell.GetOrbitalDescriptions(orbital_descriptions);
+
+  std::cout << "Description of the orbitals: \n";
+  for (const auto &orbital_description : orbital_descriptions) {
+    std::cout << orbital_description << "\n";
+  }
+
+  std::cout << "\nOrbital normalization test:\n";
   
   cuba::Cuba engine(1e8,1e5,1e-4);
   
@@ -62,11 +68,9 @@ int main(int argc, char *argv[])
   };
 
   engine.divonne_result(integrand, b3, resN, errN, pN, steps);
-
   
   for (size_t i  = 0; i < resN.size(); ++i)
-    std::cout << "\nint: "
-              << resN[i] << " "
+    std::cout << resN[i] << " "
               << errN[i] << " "
               << steps << "\n";
 

@@ -1,6 +1,7 @@
 #include "../headers/interpolator.h"
 
-Interpolator::Interpolator() {
+
+celerium::gsl::Interpolator::Interpolator() {
   this->acc = nullptr;
   this->spline = nullptr;
   this->t = nullptr;
@@ -9,7 +10,7 @@ Interpolator::Interpolator() {
 }
 
 
-Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
+celerium::gsl::Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
   std::vector<double> x (samples.size());
   std::vector<double> y (samples.size());
 
@@ -22,7 +23,7 @@ Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
     if (x[i] > x_max || i == 0) x_max = x[i];
     if (x[i] < x_min || i == 0) x_min = x[i];
   }
-    
+  
   this->acc = gsl_interp_accel_alloc();
   this->spline = gsl_spline_alloc(gsl_interp_cspline, samples.size());
   gsl_spline_init(spline, x.data(), y.data(), samples.size());
@@ -33,7 +34,7 @@ Interpolator::Interpolator(const std::vector<sample_struct> &samples) {
 }
 
 
-Interpolator::Interpolator(const std::vector<sample_struct> &samples,
+celerium::gsl::Interpolator::Interpolator(const std::vector<sample_struct> &samples,
                            const gsl_interp_type *t) {
   
   std::vector<double> x (samples.size());
@@ -56,7 +57,7 @@ Interpolator::Interpolator(const std::vector<sample_struct> &samples,
   this->samples = samples;
 }
 
-Interpolator::Interpolator(const Interpolator &interp) {
+celerium::gsl::Interpolator::Interpolator(const Interpolator &interp) {
 
   this->samples=interp.samples;
   this->t = interp.t;
@@ -77,7 +78,7 @@ Interpolator::Interpolator(const Interpolator &interp) {
 }
 
 
-Interpolator::Interpolator(Interpolator &&interp) {
+celerium::gsl::Interpolator::Interpolator(Interpolator &&interp) {
   
   this->acc = interp.acc;
   this->spline = interp.spline;
@@ -90,12 +91,12 @@ Interpolator::Interpolator(Interpolator &&interp) {
   interp.spline = nullptr;
 }
 
-Interpolator::~Interpolator() {
+celerium::gsl::Interpolator::~Interpolator() {
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
 }
 
-Interpolator &Interpolator::operator=(const Interpolator &rhs) {
+Interpolator &celerium::gsl::Interpolator::operator=(const Interpolator &rhs) {
   std::vector<double> x (rhs.samples.size());
   std::vector<double> y (rhs.samples.size());
   
@@ -122,7 +123,7 @@ Interpolator &Interpolator::operator=(const Interpolator &rhs) {
 
 
 
-void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
+void celerium::gsl::Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
 
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
@@ -147,12 +148,12 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
   this->samples = samples;
 }
 
-  void Interpolator::SetSamples(const std::vector<sample_struct> &samples,
-                  const gsl_interp_type * t) {
+void celerium::gsl::Interpolator::SetSamples(const std::vector<sample_struct> &samples,
+                              const gsl_interp_type * t) {
 
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
-    
+  
   std::vector<double> x (samples.size());
   std::vector<double> y (samples.size());
 
@@ -171,9 +172,9 @@ void Interpolator::SetSamples(const std::vector<sample_struct> &samples) {
   gsl_spline_init (spline, x.data(), y.data(), samples.size());
   this->t = t;
   this->samples = samples;
-  }
+}
 
-void Interpolator::Clear() {
+void celerium::gsl::Interpolator::Clear() {
   gsl_spline_free (this->spline);
   gsl_interp_accel_free (this->acc);
   this->acc = nullptr;
@@ -186,11 +187,11 @@ void Interpolator::Clear() {
 
 
 
-double Interpolator::operator()(double x) const {
+double celerium::gsl::Interpolator::operator()(double x) const {
 
   if(this->spline == nullptr) {
     throw std::runtime_error("Interpolator is not \
-initialized with any data. Interpolator::operator() cannot be executed.");
+initialized with any data. celerium::gsl::Interpolator::operator() cannot be executed.");
   }
 
   
@@ -203,11 +204,11 @@ initialized with any data. Interpolator::operator() cannot be executed.");
   return gsl_spline_eval (this->spline, x, this->acc);
 }
 
-double Interpolator::D1(double x) const {
+double celerium::gsl::Interpolator::D1(double x) const {
 
   if(this->spline == nullptr) {
     throw std::runtime_error("Interpolator is not \
-initialized with any data. Interpolator::D1 cannot be executed.");
+initialized with any data. celerium::gsl::Interpolator::D1 cannot be executed.");
   }
 
   if (x > this->x_max) {
@@ -219,11 +220,11 @@ initialized with any data. Interpolator::D1 cannot be executed.");
   return gsl_spline_eval_deriv(this->spline, x, this->acc);
 }
 
-double Interpolator::D2(double x) const {
+double celerium::gsl::Interpolator::D2(double x) const {
 
   if(this->spline == nullptr) {
     throw std::runtime_error("Interpolator is not \
-initialized with any data. Interpolator::D2 cannot be executed.");
+initialized with any data. celerium::gsl::Interpolator::D2 cannot be executed.");
   }
 
   
@@ -236,11 +237,11 @@ initialized with any data. Interpolator::D2 cannot be executed.");
   return gsl_spline_eval_deriv2(this->spline, x, this->acc);
 }
 
-double Interpolator::Int(double a, double b) const {
+double celerium::gsl::Interpolator::Int(double a, double b) const {
 
   if(this->spline == nullptr) {
     throw std::runtime_error("Interpolator is not \
-initialized with any data. Interpolator::Int cannot be executed.");
+initialized with any data. celerium::gsl::Interpolator::Int cannot be executed.");
   }
   
   double result = 0.0;
@@ -267,8 +268,6 @@ initialized with any data. Interpolator::Int cannot be executed.");
   return result;
 }
 
-const std::vector<sample_struct> &Interpolator::GetSamples() const {
+const std::vector<sample_struct> &celerium::gsl::Interpolator::GetSamples() const {
   return this->samples;
 }
-
-

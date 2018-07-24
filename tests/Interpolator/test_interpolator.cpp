@@ -16,7 +16,7 @@ int main()
   std::cout << std::fixed << std::setprecision(6);
 
   // Coarsly sample sine function on (0, PI) interval.
-  std::vector<sample_struct> samples_sin {
+  std::vector<gsl::sample_struct> samples_sin {
     {0.0, sin(0.0)},
     {0.1, sin(0.1)},
     {0.11, sin(0.11)},
@@ -27,7 +27,7 @@ int main()
   };
 
   // Coarsly sample cos function on (0, PI) interval.
-  std::vector<sample_struct> samples_cos {
+  std::vector<gsl::sample_struct> samples_cos {
     {0.0, cos(0.0)},
     {0.1, cos(0.1)},
     {0.11, cos(0.11)},
@@ -40,7 +40,7 @@ int main()
 
 
   // Interpolate between samples using default settings (csplines).
-  Interpolator interp(samples_sin);
+  gsl::Interpolator interp(samples_sin);
  
   std::cout << std::setw(20) << "x";
   std::cout << std::setw(20) << "sin(x)";

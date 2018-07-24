@@ -20,13 +20,14 @@ class Lattice {
   Lattice(const ElementaryCell &elementary_cell) :
       elementary_cell(elementary_cell) {}
 
-  int CalculateWannierCoefficients(
+  int CalculateWannierData(
       const std::array<int, 3> &overlap_range,
-      const std::array<int, 3> &wannier_range,
+      const std::array<int, 3> &orbital_range,
       const std::vector<std::array<int, 3>> &wannier_positions,
       const std::vector<std::pair<double,double>> &integration_limits,
       cuba::Cuba &cuba_engine,
       double wannier_coefficient_cutoff,
+      bool suppress_coefficiets_below_numerical_uncertainty,
       bool verbose) {
 
     std::vector<std::pair<std::array<int, 3>, gsl::Matrix>> orbital_overlaps;
@@ -56,14 +57,21 @@ class Lattice {
       int steps = 0;
       gsl::Matrix overlap_matrix(n_orbitals);
 
-
       std::function<int(const double *, double *)> integrand;
       integrand = [&](const double *xx, double *ff) {
         std::vector<double> orbitals1 (n_orbitals);
         std::vector<double> orbitals2 (n_orbitals);
         ArithmeticVector xx_arr({xx[0], xx[1], xx[2]});
         this->elementary_cell.EvaluateOrbitals(xx, orbitals1);
-        this->EvaluateOrbitals(xx_arr, drs[i_dr], orbitals2);
+
+        auto &basis = elementary_cell.GetBasis().GetVectors();
+    
+        auto r = xx_arr +
+             basis[0]*((double)drs[i_dr][0])+
+             basis[1]*((double)drs[i_dr][1])+
+             basis[2]*((double)drs[i_dr][2]);
+
+        this->elementary_cell.EvaluateOrbitals(r.data(), orbitals2);
       
         size_t i = 0;
         for (size_t i1 = 0; i1 < n_orbitals; ++i1) {
@@ -75,7 +83,8 @@ class Lattice {
         return 0;
       };
 
-      cuba_engine.divonne_result(integrand, integration_limits, resN, errN, pN, steps);
+      cuba_engine.divonne_result(integrand, integration_limits,
+                                 resN, errN, pN, steps);
 
       if (verbose) {
         std::cerr << std::fixed << std::setprecision(4);
@@ -88,9 +97,19 @@ class Lattice {
       
       for (size_t i  = 0; i < elementary_cell.NOrbitals(); ++i) {
         for (size_t j  = 0; j < elementary_cell.NOrbitals(); ++j) {
+
           overlap_matrix(i, j) = resN[i*elementary_cell.NOrbitals() + j];
-          if (verbose)
-            std::cerr << resN[i*elementary_cell.NOrbitals() + j] << " ";
+
+          if (suppress_coefficiets_below_numerical_uncertainty) {
+            if (fabs(resN[i*elementary_cell.NOrbitals() + j]) <
+                errN[i*elementary_cell.NOrbitals() + j])
+              overlap_matrix(i, j) = 0;
+          }
+            
+          if (verbose) {
+            std::cerr << resN[i*elementary_cell.NOrbitals() + j] << " (";
+            std::cerr << errN[i*elementary_cell.NOrbitals() + j] << ") ";
+          }
         }
         if (verbose) std::cerr << "\n";
       }
@@ -101,7 +120,7 @@ class Lattice {
     }
 
     wannier_data.Initialize(orbital_overlaps,
-                            wannier_range,
+                            orbital_range,
                             wannier_positions,
                             this->elementary_cell.GetBasis().GetVectors(),
                             wannier_coefficient_cutoff);
@@ -120,24 +139,10 @@ class Lattice {
 
   void LoadWannierDataFromFile(const char *file_name) {
     this->wannier_data.LoadFromFile(file_name);
-    size_t n_orbtial_positions = this->wannier_data.GetOrbitalPositions().size();
+    size_t n_orbtial_positions =
+        this->wannier_data.GetOrbitalPositions().size();
     size_t n_orbitals = this->elementary_cell.NOrbitals();
     evaluated_orbitals.resize(n_orbitals*n_orbtial_positions);
-  }
-
-
-  void EvaluateOrbitals(const ArithmeticVector &coords,
-                        const std::array<int, 3> &orbital_position,
-                        std::vector<double> &result) {
-
-    auto &basis = elementary_cell.GetBasis().GetVectors();
-    
-    auto r = coords +
-             basis[0]*((double)orbital_position[0])+
-             basis[1]*((double)orbital_position[1])+
-             basis[2]*((double)orbital_position[2]);
-    
-    this->elementary_cell.EvaluateOrbitals(r.data(), result);
   }
 
   void UpdateWanniers(const ArithmeticVector &coords) {
@@ -148,7 +153,7 @@ class Lattice {
       
     for (size_t i = 0; i < n_orbital_positions; ++i) {
       const auto r = coords +
-                     this->wannier_data.GetOrbitalPositions()[i].absolute_position;
+                 this->wannier_data.GetOrbitalPositions()[i].absolute_position;
       this->elementary_cell.EvaluateOrbitals(r.data(),
                                              this->evaluated_orbitals.data() +
                                              i*n_orbitals);
@@ -190,9 +195,7 @@ class Lattice {
                                       extended_coeff.orbital_index];
       }
     }
-  }
-  
-
+  }  
   
   private:
   ElementaryCell elementary_cell;
@@ -203,4 +206,5 @@ class Lattice {
 
 
 }  // celerium
+
 #endif /* LATTICE_H */
