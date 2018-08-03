@@ -163,7 +163,7 @@ namespace celerium{
      return stream;
     }
     
-    T length_squared(){
+    T length_squared() const{
       T localnorm=T(0);
       for(const auto& item : body){
         localnorm += item*item;
@@ -171,7 +171,7 @@ namespace celerium{
       return localnorm;
     }
     
-    T length(){
+    T length() const{
       return sqrt(length_squared());
     }
     

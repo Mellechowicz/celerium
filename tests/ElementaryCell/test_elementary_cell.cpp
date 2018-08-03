@@ -52,6 +52,23 @@ int main(int argc, char *argv[])
     std::cout << orbital_description << "\n";
   }
 
+
+  elementary_cell.SetCrystalPotentialCutoff(40.0);
+
+    size_t npt = 100;
+   for (size_t i  = 1; i < npt; ++i) {
+     for (size_t j  = 1; j < npt; ++j) {
+      
+            double x = -5.012 + 10.024/npt*i;
+            double y = -5.012 + 10.024/npt*j;
+            double r [] = {x, y, a/4};
+            std::cout << x << " " << y << " " <<
+              elementary_cell.EvaluateCrystalPotential(r) << "\n";
+    }
+  }  
+
+  return 0;
+
   std::cout << "\nOrbital normalization test:\n";
   
   cuba::Cuba engine(1e8,1e5,1e-4);

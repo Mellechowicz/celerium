@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
   Lattice lattice(elementary_cell);
 
-  cuba::Cuba engine(1e9,1e5,1e-4);
+  cuba::Cuba engine(1e9,1e6,1e-4);
   
   // Uncomment the below region to recalculate Wannier coefficients for Cr.
   /*
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
       {{0, 0, 0}, {1, 0, 0}}, // Wannier located at points (0, 0, 0) and (1, 0, 0)) will be caluclated.
       integration_limits,     // Intergation limits for orbital overlaps.
       engine,                 // Integration engine.
-      0.001,                  // Lower cutoff for the Wannier coefficients.
+      0.01,                   // Lower cutoff for the Wannier coefficients.
       true,                   // Suppress coefficiens below numerical accuracy treshold.
       true);                  // Verbose = true. Pass info about progress to std::cerr
                               // to allow for progress monitoring.
@@ -60,8 +60,6 @@ int main(int argc, char *argv[])
   */
   
   lattice.LoadWannierDataFromFile("wanniers.dat");
-
-  std::ofstream file("orbital.dat", std::ofstream::trunc);
 
   size_t npt = 100;
    for (size_t i  = 1; i < npt; ++i) {
@@ -73,7 +71,7 @@ int main(int argc, char *argv[])
             // Update all Wanniers. This might be a time-consuming operation.
             // Once it is done, we will have a rapid access to Wannier
             // functions.
-            lattice.UpdateWanniers({{x, y, 0.0}});
+            lattice.UpdateLaplacians({{x, y, 0.0}});
 
             // Print Wannier #5 (4s-like on Cr(1)), located at
             // position #0 (R = [0, 0, 0]).

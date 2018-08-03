@@ -128,6 +128,7 @@ class Lattice {
     size_t n_orbitals = this->elementary_cell.NOrbitals();
     size_t n_orbital_positions = this->wannier_data.GetOrbitalPositions().size();
     this->evaluated_orbitals.resize(n_orbitals*n_orbital_positions);
+    this->evaluated_laplacians.resize(n_orbitals*n_orbital_positions);
         
     return 0;
   }
@@ -143,6 +144,7 @@ class Lattice {
         this->wannier_data.GetOrbitalPositions().size();
     size_t n_orbitals = this->elementary_cell.NOrbitals();
     evaluated_orbitals.resize(n_orbitals*n_orbtial_positions);
+    evaluated_laplacians.resize(n_orbitals*n_orbtial_positions);
   }
 
   void UpdateWanniers(const ArithmeticVector &coords) {
@@ -159,6 +161,22 @@ class Lattice {
                                              i*n_orbitals);
     }
   }
+
+  void UpdateLaplacians(const ArithmeticVector &coords) {
+
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
+    const size_t n_orbital_positions =
+        this->wannier_data.GetOrbitalPositions().size();
+      
+    for (size_t i = 0; i < n_orbital_positions; ++i) {
+      const auto r = coords +
+                 this->wannier_data.GetOrbitalPositions()[i].absolute_position;
+      this->elementary_cell.EvaluateLaplacians(r.data(),
+                                               this->evaluated_laplacians.data() +
+                                               i*n_orbitals);
+    }
+  }
+
 
   double GetWannier(size_t wannier_position_index, size_t wannier_index) const {
 
@@ -195,12 +213,59 @@ class Lattice {
                                       extended_coeff.orbital_index];
       }
     }
+  }
+
+  double GetLaplacian(size_t wannier_position_index,
+                      size_t wannier_index) const {
+
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
+    
+    const auto &extended_coeffs =
+        this->wannier_data.GetWanniers()
+        [wannier_position_index*n_orbitals + wannier_index].extended_coeffs;
+
+    double result {0};
+
+    for (const auto& extended_coeff : extended_coeffs) {
+      result += extended_coeff.coeff *
+                this->evaluated_laplacians[
+                    n_orbitals*extended_coeff.position_index +
+                    extended_coeff.orbital_index];
+    }
+    
+    return result;
+  }
+
+  void GetLaplacians(size_t wannier_position_index,
+                     double result []) const {
+    
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
+    const size_t shift = wannier_position_index*n_orbitals;
+    
+    for (size_t i = 0; i < n_orbitals; ++i) {
+      const auto &extended_coeffs =
+          this->wannier_data.GetWanniers()
+          [shift + i].extended_coeffs;
+
+      result[i] = 0;
+      for (const auto& extended_coeff : extended_coeffs) {
+        result[i] += extended_coeff.coeff *
+                     this->evaluated_laplacians[
+                         n_orbitals*extended_coeff.position_index +
+                         extended_coeff.orbital_index];
+      }
+    }
   }  
+
+  double EvaluateCrystalPotential(const double coords []) {
+    return this->elementary_cell.EvaluateCrystalPotential(coords);
+  }
   
   private:
   ElementaryCell elementary_cell;
   WannierData wannier_data;
   std::vector<double> evaluated_orbitals;
+  std::vector<double> evaluated_laplacians;
 };
 
 
