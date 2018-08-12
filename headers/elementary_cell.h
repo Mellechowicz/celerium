@@ -10,22 +10,33 @@ namespace celerium {
 // the lattice site.
 struct lattice_site_struct {
   std::string name;
-  size_t element_index;
+  size_t element_index;         // Inequivalent elements are held in a separate container:
+                                // this is the element index corresponding to the lattice site.
   ArithmeticVector position;    // Position of the site provided by the user.
   ArithmeticVector position_in_elementary_cell; // Guaranteed to be inside the
                                                 // elementary cell. Used to
-                                                // efficiently calculate crystal
-                                                // potential. 
+                                                // Efficiently calculate crystal
+                                                // potential. Calculated automatically.
 };
 
 // Structure containing data used
-// for computation ofcrystal potential.
+// for computation of crystal potential.
 struct crystal_potential_data_struct {
   std::vector<ArithmeticVector> contributing_cells; // Absolute Positions of
                                                     // cells contributing to the
                                                     // potential.
   double cutoff_radius; // Cutoff for pseudopotentials.
-  double ionic_interacion_shift;
+  double ionic_interacion_shift; // A constant shift of the potential
+                                 // due to interaction between ions. 
+};
+
+// Structure containing data for quick access to orbital of given index.
+struct orbital_handler_struct
+{
+  size_t lattice_site_index;
+  size_t orbital_class_index;
+  int m;
+  std::string description;
 };
 
 template <class Element =
@@ -35,21 +46,21 @@ class ElementaryCell {
  public:
 
   ElementaryCell(const std::array<ArithmeticVector, 3> &basis) :
-      n_orbitals(0),
       basis(basis) {}
 
   ElementaryCell(const ElementaryCell &e) :
-      n_orbitals(e.n_orbitals),
       lattice_sites(e.lattice_sites),
       elements(e.elements),
-      basis(e.basis) {}
+      basis(e.basis),
+      orbital_handlers(e.orbital_handlers),
+      crystal_potential_data(e.crystal_potential_data) {}
 
   ElementaryCell &operator=(const ElementaryCell &rhs) {
-    this->n_orbitals=rhs.n_orbitals;
     this->lattice_sites=rhs.lattice_sites;
     this->elements=rhs.elements;
     this->basis=rhs.basis;
     this->crystal_potential_data = rhs.crystal_potential_data;
+    this->orbital_handlers = rhs.orbital_handlers;
   }
 
   void SetCrystalPotentialCutoff(double cutoff_radius) {
@@ -122,36 +133,88 @@ Attempted to add two lattice sites with the same name.");
       lattice_site.element_index =
           std::distance(this->elements.begin(), located_element);
     }
-    
-    for (auto &orbital_class : element.GetOrbitalClasses()) 
-      this->n_orbitals += orbital_class.GetActiveMValues().size();
-    
+
     this->lattice_sites.push_back(lattice_site);
+    
+    size_t orbital_class_index = 0;
+    orbital_handler_struct orbital_handler;
+    for (const auto &orbital_class : element.GetOrbitalClasses()) {      
+      orbital_handler.lattice_site_index = lattice_sites.size() - 1;
+      orbital_handler.orbital_class_index = orbital_class_index;
+
+
+      
+      for (const auto &active_m_value : orbital_class.GetActiveMValues()) {
+        orbital_handler.m = active_m_value;
+        std::stringstream ss("");
+        ss << "index="<< this->orbital_handlers.size()
+           << ": " << lattice_site.name << ", "
+           << orbital_class.GetN() <<
+            OrbitalDescription(orbital_class.GetL(), active_m_value);
+        orbital_handler.description = ss.str();
+        this->orbital_handlers.push_back(orbital_handler);
+      }
+      orbital_class_index++;
+    }
+    
+    
   }
 
-  size_t NOrbitals() const {return this->n_orbitals;}
+  size_t NOrbitals() const {return this->orbital_handlers.size();}
 
   size_t NSites() const {return this->lattice_sites.size();}
 
-  void GetOrbitalDescriptions(std::vector<std::string> &descriptions) {
-    descriptions.clear();
-    size_t i  = 0;
-    for (const auto &lattice_site : this->lattice_sites) {
-      for (const auto &orbital_class :
-               this->elements[lattice_site.element_index].GetOrbitalClasses()) {
-        for (int m : orbital_class.GetActiveMValues()) {
-          std::stringstream ss("");
-          ss << "index="<< i << ": " << lattice_site.name << ", "
-             << orbital_class.GetN() <<
-              OrbitalDescription(orbital_class.GetL(), m);
-              descriptions.push_back(ss.str());
-          ++i;
-        }
-      }
-    }
+  const std::string &GetOrbitalDescription(size_t orbital_index) {
+    return this->orbital_handlers[orbital_index].description;
   }
 
 
+  double EvaluateOrbital(size_t orbital_index,
+                        const double coords []) const {
+    const auto &orbital_handler = this->orbital_handlers[orbital_index];
+    const auto &lattice_site =
+        this->lattice_sites[orbital_handler.lattice_site_index];
+    const auto &orbital_class =
+        elements[lattice_site.element_index].
+        GetOrbitalClasses()[orbital_handler.orbital_class_index];
+
+    double x0 = coords[0] - lattice_site.position[0];
+    double x1 = coords[1] - lattice_site.position[1];
+    double x2 = coords[2] - lattice_site.position[2];
+    double r = std::sqrt(x0*x0 + x1*x1 + x2*x2);
+
+    return orbital_class.GetRadialWF()(r) *
+        RealSphericalHarmonic(orbital_class.GetL(),
+                              orbital_handler.m, x0, x1, x2);
+  }
+
+  double EvaluateLaplacian(size_t orbital_index,
+                           const double coords []) const {
+    const auto &orbital_handler = this->orbital_handlers[orbital_index];
+    const auto &lattice_site =
+        this->lattice_sites[orbital_handler.lattice_site_index];
+    const auto &element = elements[lattice_site.element_index];
+    const auto &orbital_class =
+        element.GetOrbitalClasses()[orbital_handler.orbital_class_index];
+
+    const double x0 = coords[0] - lattice_site.position[0];
+    const double x1 = coords[1] - lattice_site.position[1];
+    const double x2 = coords[2] - lattice_site.position[2];
+    const double r = std::sqrt(x0*x0 + x1*x1 + x2*x2);
+
+       
+    double result = element.GetRadialPotential()(r);
+    result -= orbital_class.GetEnergy();
+    result *=
+        orbital_class.GetRadialWF()(r) *
+        RealSphericalHarmonic(orbital_class.GetL(),
+                              orbital_handler.m, x0, x1, x2);
+
+    result *= 0.262468426082;  // 1/(h_bar^2 / 2 m_e)
+
+    return result;
+
+  }
   
   void EvaluateOrbitals(const double coords [],
                         double result []) const {
@@ -236,7 +299,6 @@ Attempted to add two lattice sites with the same name.");
 
     ArithmeticVector
         coords_in_elementary_cell({coords[0], coords[1], coords[2]});
-
     
     for (size_t i = 0; i < 3; ++i) {
       double n =
@@ -337,13 +399,11 @@ Attempted to add two lattice sites with the same name.");
       result = ss.str();
     }
     return std::move(result);
-}
-
-  
-  size_t n_orbitals; // Total number of orbitals in the unit cell.
+}  
   std::vector<lattice_site_struct> lattice_sites;  
   std::vector<Element> elements;
   Basis basis;
+  std::vector<orbital_handler_struct> orbital_handlers;
   crystal_potential_data_struct crystal_potential_data;
 };
 

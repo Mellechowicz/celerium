@@ -44,12 +44,10 @@ int main(int argc, char *argv[])
   std::cout << "Number of orbitals in the elementary cell: "
             <<  elementary_cell.NOrbitals() << "\n\n";
 
-  std::vector<std::string> orbital_descriptions;
-  elementary_cell.GetOrbitalDescriptions(orbital_descriptions);
 
   std::cout << "Description of the orbitals: \n";
-  for (const auto &orbital_description : orbital_descriptions) {
-    std::cout << orbital_description << "\n";
+  for (size_t i = 0; i < elementary_cell.NOrbitals(); ++i) {
+    std::cout << elementary_cell.GetOrbitalDescription(i) << "\n";
   }
 
 

@@ -38,22 +38,10 @@ int main(int argc, char *argv[])
   elementary_cell.AddSite("O(1)", oxygen, {{a*0.5, 0.0, 0.0}});
   elementary_cell.AddSite("O(2)", oxygen, {{0.0, a*0.5, 0.0}});
   elementary_cell.AddSite("O(3)", oxygen, {{0.0, 0.0, c*0.18623}});
-  elementary_cell.AddSite("O(4)", oxygen, {{0.0, 0.0, -c*0.18623}});
-  
-  
-
-  std::vector<std::string> orbital_descriptions;
-  elementary_cell.GetOrbitalDescriptions(orbital_descriptions);
-
-  for (const auto &orbital_description : orbital_descriptions)
-    std::cout << orbital_description << "\n";
-      
+  elementary_cell.AddSite("O(4)", oxygen, {{0.0, 0.0, -c*0.18623}});      
 
   elementary_cell.SetCrystalPotentialCutoff(40.0);
   Lattice lattice(elementary_cell);
-  
-
-  
   
   // Uncomment the below region to recalculate Wannier coefficients for Cr.
 
@@ -78,29 +66,27 @@ int main(int argc, char *argv[])
   */
 
 
-  
+  for (size_t i  = 0; i < elementary_cell.NOrbitals(); ++i) {
+    std::cout << elementary_cell.GetOrbitalDescription(i) << "\n";
+  }
+   
   lattice.LoadWannierDataFromFile("wanniers.dat");
 
-  cuba::Cuba engine(1e7,1e6,1e-3);
+  cuba::Cuba engine(1e6,1e6,1e-7);
   
   std::vector<std::pair<double,double>> b3(3,std::make_pair(-10,10));
-  std::vector<double> resN (25), errN (25), pN (25);  
+  std::vector<double> resN (1), errN (1), pN (1);  
   int steps = 0;
 
   std::function<int(const double *, double *)> integrand;
   integrand = [&](const double *xx, double *ff) {
-
-    ArithmeticVector coords({xx[0], xx[1], xx[2]});
-    lattice.UpdateWanniers(coords);
-    lattice.UpdateLaplacians(coords);
-
+                
     double w, dw, v;
-
-    v = lattice.EvaluateCrystalPotential(xx);
     
-    for (size_t i = 0; i < 24; ++i) {
-      w = lattice.GetWannier(0, i);
-      dw = lattice.GetLaplacian(0, i);
+    for (size_t i = 0; i < 1; ++i) {
+      w = lattice.EvaluateWannier(0, 5, xx);
+      dw = lattice.EvaluateLaplacian(0, 5, xx);
+      v = lattice.EvaluateCrystalPotential(xx);
       ff[i] = -3.80998208024*w*dw + w*w*v;
     }
     return 0;

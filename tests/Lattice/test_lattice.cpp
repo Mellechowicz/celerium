@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
             // Update all Wanniers. This might be a time-consuming operation.
             // Once it is done, we will have a rapid access to Wannier
             // functions.
-            lattice.UpdateLaplacians({{x, y, 0.0}});
+            lattice.UpdateWanniers({{x, y, 0.0}});
 
             // Print Wannier #5 (4s-like on Cr(1)), located at
             // position #0 (R = [0, 0, 0]).

@@ -215,6 +215,27 @@ class Lattice {
     }
   }
 
+  double EvaluateWannier(size_t wannier_position_index,
+                       size_t wannier_index,
+                       const double coords []) const {
+
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
+    
+    const auto &extended_coeffs =
+        this->wannier_data.GetWanniers()
+        [wannier_position_index*n_orbitals + wannier_index].extended_coeffs;
+
+   double result {0};
+
+    for (const auto& extended_coeff : extended_coeffs) {
+      result += extended_coeff.coeff *
+                this->elementary_cell.EvaluateOrbital(wannier_index, coords);
+    }
+    
+    return result;
+  }
+
+  
   double GetLaplacian(size_t wannier_position_index,
                       size_t wannier_index) const {
 
@@ -256,6 +277,28 @@ class Lattice {
       }
     }
   }  
+
+  double EvaluateLaplacian(size_t wannier_position_index,
+                       size_t wannier_index,
+                       const double coords []) const {
+
+    const size_t n_orbitals = this->elementary_cell.NOrbitals();
+    
+    const auto &extended_coeffs =
+        this->wannier_data.GetWanniers()
+        [wannier_position_index*n_orbitals + wannier_index].extended_coeffs;
+
+   double result {0};
+
+    for (const auto& extended_coeff : extended_coeffs) {
+      result += extended_coeff.coeff *
+                this->elementary_cell.EvaluateLaplacian(wannier_index, coords);
+    }
+    
+    return result;
+  }
+
+
 
   double EvaluateCrystalPotential(const double coords []) {
     return this->elementary_cell.EvaluateCrystalPotential(coords);
