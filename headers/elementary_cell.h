@@ -141,14 +141,11 @@ Attempted to add two lattice sites with the same name.");
     for (const auto &orbital_class : element.GetOrbitalClasses()) {      
       orbital_handler.lattice_site_index = lattice_sites.size() - 1;
       orbital_handler.orbital_class_index = orbital_class_index;
-
-
       
       for (const auto &active_m_value : orbital_class.GetActiveMValues()) {
         orbital_handler.m = active_m_value;
         std::stringstream ss("");
-        ss << "index="<< this->orbital_handlers.size()
-           << ": " << lattice_site.name << ", "
+        ss << lattice_site.name << "_"
            << orbital_class.GetN() <<
             OrbitalDescription(orbital_class.GetL(), active_m_value);
         orbital_handler.description = ss.str();
@@ -171,7 +168,8 @@ Attempted to add two lattice sites with the same name.");
 
   double EvaluateOrbital(size_t orbital_index,
                         const double coords []) const {
-    const auto &orbital_handler = this->orbital_handlers[orbital_index];
+    const auto &orbital_handler =
+        this->orbital_handlers[orbital_index];
     const auto &lattice_site =
         this->lattice_sites[orbital_handler.lattice_site_index];
     const auto &orbital_class =
@@ -245,7 +243,7 @@ Attempted to add two lattice sites with the same name.");
 
   void EvaluateOrbitals(const double coords [],
                         std::vector<double> &result) const {
-    result.resize(this->n_orbitals);
+    result.resize(this->NOrbitals());
     EvaluateOrbitals(coords, result.data());
   }
 
@@ -328,6 +326,26 @@ Attempted to add two lattice sites with the same name.");
   }
 
   const Basis &GetBasis() const {return this->basis;}
+
+  const ArithmeticVector &GetSitePosition(size_t site_index) const {
+    return this->lattice_sites[site_index].position;
+  }
+
+  const ArithmeticVector &GetOrbitalPosition(size_t orbital_index) const {
+    size_t site_index =  this->orbital_handlers[orbital_index].lattice_site_index;
+    return lattice_sites[site_index].position;
+  }
+
+
+  const ArithmeticVector &GetSitePositionInElementaryCell(size_t site_index) const {
+    return this->lattice_sites[site_index].position_in_elementary_cell;
+  }
+
+  const ArithmeticVector &GetOrbitalPositionInElementaryCell(size_t orbital_index) const {
+    size_t site_index =  this->orbital_handlers[orbital_index].lattice_site_index;
+    return lattice_sites[site_index].position_in_elementary_cell;
+  }
+
 
  private:
 

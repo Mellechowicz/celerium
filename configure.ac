@@ -48,6 +48,7 @@ AC_CONFIG_FILES([Makefile
 		 tests/PeriodicWannier/Makefile
 		 tests/Lattice/Makefile
 		 tests/Interpolator3d/Makefile
+		 tests/HamiltonianGenerator/Makefile
 		 demo/CuO2Plane/Makefile])
 
 AC_OUTPUT

@@ -19,7 +19,7 @@ int celerium::cuba::Cuba::suave_explicit(int (*function)(const int*, const doubl
 	int nregions;
       
 	Suave(parameters.nDim, parameters.nComp, function, userdata, parameters.nvec,
-			parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
+			parameters.epsrel, parameters.epsabs / jacobian, parameters.verbose | parameters.last | parameters.level, parameters.seed,
 			parameters.mineval, parameters.maxeval, parameters.nnew, parameters.nmin, parameters.flatness,
 			parameters.statefile, &spin, &nregions, &stepsEvaluated, 
 			&hasFailed, result, errorEstimate, probability);
@@ -40,7 +40,7 @@ int celerium::cuba::Cuba::divonne_explicit(int (*function)(const int*, const dou
 	int nregions;
 
 	Divonne(parameters.nDim, parameters.nComp, function, userdata, parameters.nvec,
-			parameters.epsrel, parameters.epsabs, parameters.verbose | parameters.last | parameters.level, parameters.seed,
+			parameters.epsrel, parameters.epsabs / jacobian, parameters.verbose | parameters.last | parameters.level, parameters.seed,
 			parameters.mineval, parameters.maxeval, parameters.key1, parameters.key2, parameters.key3,
 			parameters.maxpass, parameters.border, parameters.maxchisq, parameters.mindeviation,
 			parameters.ngiven, parameters.ldxgiven, parameters.xgiven, parameters.nextra, NULL, 

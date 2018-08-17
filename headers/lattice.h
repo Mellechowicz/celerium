@@ -20,6 +20,16 @@ class Lattice {
   Lattice(const ElementaryCell &elementary_cell) :
       elementary_cell(elementary_cell) {}
 
+
+  size_t NWanniers() const {
+    return this->elementary_cell.NOrbitals();
+  }
+
+  const ElementaryCell &GetElementaryCell() const {
+    return this->elementary_cell;
+  }
+
+
   int CalculateWannierData(
       const std::array<int, 3> &overlap_range,
       const std::array<int, 3> &orbital_range,
@@ -66,9 +76,9 @@ class Lattice {
 
         auto &basis = elementary_cell.GetBasis().GetVectors();
     
-        auto r = xx_arr +
-             basis[0]*((double)drs[i_dr][0])+
-             basis[1]*((double)drs[i_dr][1])+
+        auto r = xx_arr -
+             basis[0]*((double)drs[i_dr][0])-
+             basis[1]*((double)drs[i_dr][1])-
              basis[2]*((double)drs[i_dr][2]);
 
         this->elementary_cell.EvaluateOrbitals(r.data(), orbitals2);
@@ -154,7 +164,7 @@ class Lattice {
         this->wannier_data.GetOrbitalPositions().size();
       
     for (size_t i = 0; i < n_orbital_positions; ++i) {
-      const auto r = coords +
+      const auto r = coords -
                  this->wannier_data.GetOrbitalPositions()[i].absolute_position;
       this->elementary_cell.EvaluateOrbitals(r.data(),
                                              this->evaluated_orbitals.data() +
@@ -169,7 +179,7 @@ class Lattice {
         this->wannier_data.GetOrbitalPositions().size();
       
     for (size_t i = 0; i < n_orbital_positions; ++i) {
-      const auto r = coords +
+      const auto r = coords -
                  this->wannier_data.GetOrbitalPositions()[i].absolute_position;
       this->elementary_cell.EvaluateLaplacians(r.data(),
                                                this->evaluated_laplacians.data() +
@@ -227,9 +237,15 @@ class Lattice {
 
    double result {0};
 
-    for (const auto& extended_coeff : extended_coeffs) {
+
+    for (const auto& extended_coeff : extended_coeffs) {   
+      double xx [] = {
+        -this->wannier_data.GetOrbitalPositions()[extended_coeff.position_index].absolute_position[0] + coords[0],
+        -this->wannier_data.GetOrbitalPositions()[extended_coeff.position_index].absolute_position[1] + coords[1],
+        -this->wannier_data.GetOrbitalPositions()[extended_coeff.position_index].absolute_position[2] + coords[2]
+      };
       result += extended_coeff.coeff *
-                this->elementary_cell.EvaluateOrbital(wannier_index, coords);
+                this->elementary_cell.EvaluateOrbital(extended_coeff.orbital_index, xx);
     }
     
     return result;
@@ -291,8 +307,13 @@ class Lattice {
    double result {0};
 
     for (const auto& extended_coeff : extended_coeffs) {
+      double xx [] = {
+        -this->wannier_data.GetOrbitalPositions()[extended_coeff.position_index].absolute_position[0] + coords[0],
+        -this->wannier_data.GetOrbitalPositions()[extended_coeff.position_index].absolute_position[1] + coords[1],
+        -this->wannier_data.GetOrbitalPositions()[extended_coeff.position_index].absolute_position[2] + coords[2]
+      };
       result += extended_coeff.coeff *
-                this->elementary_cell.EvaluateLaplacian(wannier_index, coords);
+                this->elementary_cell.EvaluateLaplacian(extended_coeff.orbital_index, xx);
     }
     
     return result;
@@ -300,7 +321,7 @@ class Lattice {
 
 
 
-  double EvaluateCrystalPotential(const double coords []) {
+  double EvaluateCrystalPotential(const double coords []) const {
     return this->elementary_cell.EvaluateCrystalPotential(coords);
   }
   
