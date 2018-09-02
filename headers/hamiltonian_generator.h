@@ -63,11 +63,11 @@ class HamiltonianGenerator {
               if (dr.length() > cutoff_radius) continue;
 
               if (w1 == w2 && i0 == 0 && i1 == 0 && i2 ==0) {
-                this->hamiltonian_terms.push_back({w1, w2, E0, relative_cell_distance, dr});
-                //this->hamiltonian_terms.push_back({w1, w2, U, relative_cell_distance, dr});
+                //this->hamiltonian_terms.push_back({w1, w2, E0, relative_cell_distance, dr});
+                this->hamiltonian_terms.push_back({w1, w2, U, relative_cell_distance, dr});
               }
               else {
-                // this->hamiltonian_terms.push_back({w1, w2, T, relative_cell_distance, dr});
+                //this->hamiltonian_terms.push_back({w1, w2, T, relative_cell_distance, dr});
                 //this->hamiltonian_terms.push_back({w1, w2, Up, relative_cell_distance, dr});
                 //this->hamiltonian_terms.push_back({w1, w2, J, relative_cell_distance, dr});
               }
@@ -131,26 +131,56 @@ class HamiltonianGenerator {
     }
     else if (term.type == U) {
       
+      //std::vector<std::pair<double,double>>
+      //    b6(6, std::make_pair(-integration_cutoff,integration_cutoff));
+
       std::vector<std::pair<double,double>>
-          b6(6, std::make_pair(-integration_cutoff,integration_cutoff));
+          b6 =
+      {
+        std::make_pair(0.0,integration_cutoff),
+        std::make_pair(0.0,M_PI),
+        std::make_pair(0.0,2.0*M_PI),
+        std::make_pair(0.0,integration_cutoff),
+        std::make_pair(0.0,M_PI),
+        std::make_pair(0.0,2.0*M_PI),
+      };
+
+      
       std::vector<double> resN (1), errN (1), pN (1);  
       steps = 0;
 
       std::function<int(const double *, double *)> integrand;
       integrand = [&](const double *xx, double *ff) {
-                    double w1, w2, r;
+                    double w1, w2;
 
-                    r = std::sqrt( (xx[0] - xx[3])*(xx[0] - xx[3]) +
-                                   (xx[1] - xx[4])*(xx[1] - xx[4]) +
-                                   (xx[2] - xx[5])*(xx[2] - xx[5]) );
+                    double x1 = xx[0]*sin(xx[1])*cos(xx[2]);
+                    double y1 = xx[0]*sin(xx[1])*sin(xx[2]);
+                    double z1 = xx[0]*cos(xx[1]);
+
+                    double x2 = xx[3]*sin(xx[4])*cos(xx[5]) + x1;
+                    double y2 = xx[3]*sin(xx[4])*sin(xx[5]) + y1;
+                    double z2 = xx[3]*cos(xx[4]) + z1;
+
+
+                    double r = sqrt( (x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2) );
                     
-                    if (r < 1e-10) r = 1e-10;
+
+                    double xx1 [] = {x1, y1, z1};
+                    double xx2 [] = {x2, y2, z2};
                     
-                    w1 = this->lattice_ptr->EvaluateWannier(0, this->hamiltonian_terms[term_index].wannier1_index, xx);
-                    w2 = this->lattice_ptr->EvaluateWannier(0, this->hamiltonian_terms[term_index].wannier2_index, xx + 3);
-                    ff[0] = 0.5 * 0.5 * 14.399645352 * w1 * w1 * w2 * w2 / r;
+                    w1 = this->lattice_ptr->EvaluateWannier(0, this->hamiltonian_terms[term_index].wannier1_index, xx1);
+                    w2 = this->lattice_ptr->EvaluateWannier(0, this->hamiltonian_terms[term_index].wannier2_index, xx2);
+                    //ff[0] = 0.5 * 0.5 * 14.399645352 * w1 * w1 * w2 * w2 / r;
+                    ff[0] = 0.5 * 0.5 * 14.399645352 * w1*w1*w2*w2*xx[0]*xx[0]*sin(xx[1])*xx[3]*xx[3]*sin(xx[4]) / r;
                     return 0;
                   };
+
+      /*
+      engine.parameters.ngiven = 1;
+      engine.parameters.ldxgiven = 6;
+      double x_given [] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      engine.parameters.xgiven = x_given;
+      */
 
       engine.divonne_result(integrand, b6, resN, errN, pN, steps);
 

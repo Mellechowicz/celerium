@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   std::array<ArithmeticVector, 3> basis;
   basis[0] = {{a, 0.0, 0.0}};
   basis[1] = {{0.0, a, 0.0}};
-  basis[2] = {{0.0, 0.0, 1000.0*a}};
+  basis[2] = {{0.0, 0.0, 0*1000.0*a + c}};
 
   ElementaryCell elementary_cell(basis);
   
@@ -47,16 +47,16 @@ int main(int argc, char *argv[])
   elementary_cell.AddSite("O(3)", oxygen, {{0.0, 0.0, c*0.18623}});
   elementary_cell.AddSite("O(4)", oxygen, {{0.0, 0.0, -c*0.18623}});      
 
-  elementary_cell.SetCrystalPotentialCutoff(20.0);
+  elementary_cell.SetCrystalPotentialCutoff(40.0);
   Lattice lattice(elementary_cell);
   
   // Uncomment the below region to recalculate Wannier coefficients for Cr.
 
   
   /*
-    cuba::Cuba engine(1e9,1e6,1e-3);
+    cuba::Cuba engine(1e7,1e6,1e-3);
     engine.parameters.epsrel = 0;
-    engine.parameters.epsabs = 1e-4;
+    engine.parameters.epsabs = 1e-3;
     std::vector<std::pair<double, double>> integration_limits(3, {-15, 15});
 
     lattice.CalculateWannierData(
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
       {{0, 0, 0}},            // Wannier located at points (0, 0, 0)  will be caluclated.
       integration_limits,     // Intergation limits for orbital overlaps.
       engine,                 // Integration engine.
-      0.0001,                 // Lower cutoff for the Wannier coefficients.
+      0.001,                  // Lower cutoff for the Wannier coefficients.
       true,                   // Suppress coefficiens below numerical accuracy treshold.
       true);                  // Verbose = true. Pass info about progress to std::cerr
                               // to allow for progress monitoring.
@@ -78,12 +78,13 @@ int main(int argc, char *argv[])
 
   HamiltonianGenerator hamiltonian_generator(3.0, lattice);
 
-  cuba::Cuba engine(1e9,1e5,0.0);
+  cuba::Cuba engine(1e5, 1e5,0.0);
   engine.parameters.epsrel = 0;
   engine.parameters.epsabs = 1e-2;
-  engine.parameters.maxeval = 1e9;
-  engine.parameters.mineval = 1e5;
-
+  engine.parameters.maxeval = 1e6;
+  engine.parameters.mineval = 1e6;
+  engine.parameters.flatness = 100;
+  engine.parameters.maxpass = 1e3;
   
   int hamiltonian_term_index = std::atoi(argv[1]);
 
