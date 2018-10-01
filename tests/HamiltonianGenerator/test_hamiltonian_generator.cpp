@@ -81,9 +81,9 @@ int main(int argc, char *argv[])
   cuba::Cuba engine(1e5, 1e5,0.0);
   engine.parameters.epsrel = 0;
   engine.parameters.epsabs = 1e-2;
-  engine.parameters.maxeval = 1e6;
-  engine.parameters.mineval = 1e6;
-  engine.parameters.flatness = 100;
+  engine.parameters.maxeval = 1e5;
+  engine.parameters.mineval = 1e5;
+  engine.parameters.flatness = 1000;
   engine.parameters.maxpass = 1e3;
   
   int hamiltonian_term_index = std::atoi(argv[1]);
@@ -95,10 +95,11 @@ int main(int argc, char *argv[])
 
   if (hamiltonian_term_index == -2) {
     for (size_t i  = 0; i < elementary_cell.NOrbitals(); ++i) {
+      std::cout << i << " ";
       std::cout << elementary_cell.GetOrbitalDescription(i) << " ";
-      std::cout << elementary_cell.GetOrbitalPositionInElementaryCell(i)[0] << " ";
-      std::cout << elementary_cell.GetOrbitalPositionInElementaryCell(i)[1] << " ";
-      std::cout << elementary_cell.GetOrbitalPositionInElementaryCell(i)[2] << "\n";
+      std::cout << elementary_cell.GetOrbitalPosition(i)[0] << " ";
+      std::cout << elementary_cell.GetOrbitalPosition(i)[1] << " ";
+      std::cout << elementary_cell.GetOrbitalPosition(i)[2] << "\n";
     }
     return 0;
   }

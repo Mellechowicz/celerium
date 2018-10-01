@@ -66,10 +66,32 @@ class ElementaryCell {
   void SetCrystalPotentialCutoff(double cutoff_radius) {
 
     this->crystal_potential_data.cutoff_radius = cutoff_radius;
+   
+    double volume =
+        fabs( (this->basis.GetVectors()[0]^this->basis.GetVectors()[1])*
+              this->basis.GetVectors()[2] );
+    
+    double width0 =
+        (this->basis.GetVectors()[1]^this->basis.GetVectors()[2]).length();
+    
+    double width1 =
+        (this->basis.GetVectors()[0]^this->basis.GetVectors()[2]).length();
+    
+    double width2 =
+        (this->basis.GetVectors()[0]^this->basis.GetVectors()[1]).length();
 
-    double n0 = std::ceil(cutoff_radius/this->basis.GetVectors()[0].length());
-    double n1 = std::ceil(cutoff_radius/this->basis.GetVectors()[1].length());
-    double n2 = std::ceil(cutoff_radius/this->basis.GetVectors()[2].length());
+    width0 = fabs(volume/width0);
+    width1 = fabs(volume/width1);
+    width2 = fabs(volume/width2);
+        
+    double n0 = std::ceil(cutoff_radius/width0) + 1;
+    double n1 = std::ceil(cutoff_radius/width1) + 1;
+    double n2 = std::ceil(cutoff_radius/width2) + 1;
+
+    
+    //std::cout << width0 << " " << width1 << " " << width2 << "\n";
+    //std::cout << n0 << " " << n1 << " " << n2 << "\n";
+
 
     for (double i0 = -n0; i0 <= n0; ++i0) {
       for (double i1 = -n1; i1 <= n1; ++i1) {
@@ -89,6 +111,8 @@ class ElementaryCell {
     double r [] = {1.143561324124, 0.26543562, 0.312334532};
     this->crystal_potential_data.ionic_interacion_shift =
         -this->EvaluateCrystalPotential(r);
+
+    this->crystal_potential_data.ionic_interacion_shift = 0;
     
   }
   
@@ -110,7 +134,7 @@ Attempted to add two lattice sites with the same name.");
     lattice_site.name = site_name;
     lattice_site.position = site_position;
     lattice_site.position_in_elementary_cell = site_position;
-
+    /*
     for (size_t i = 0; i < 3; ++i) {
       double n =
           this->basis.GetVectors()[i]*lattice_site.position_in_elementary_cell;
@@ -118,6 +142,7 @@ Attempted to add two lattice sites with the same name.");
       n = -std::floor(n);
       lattice_site.position_in_elementary_cell += this->basis.GetVectors()[i]*n;
     }
+    */
     
     auto located_element = 
         std::find_if(this->elements.begin(), this->elements.end(),

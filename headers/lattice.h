@@ -139,7 +139,15 @@ class Lattice {
     size_t n_orbital_positions = this->wannier_data.GetOrbitalPositions().size();
     this->evaluated_orbitals.resize(n_orbitals*n_orbital_positions);
     this->evaluated_laplacians.resize(n_orbitals*n_orbital_positions);
-        
+
+    /*
+    std::cout << "\n\noverlap: "  <<
+        ScalarProduct(wannier_data, orbital_overlaps, 0, 0, 0, 0) << " " <<
+        ScalarProduct(wannier_data, orbital_overlaps, 0, 1, 0, 1) << " " <<
+        ScalarProduct(wannier_data, orbital_overlaps, 0, 0, 0, 1) << " " <<
+        ScalarProduct(wannier_data, orbital_overlaps, 0, 1, 0, 0) << "\n\n";
+    */
+    
     return 0;
   }
 

@@ -329,7 +329,7 @@ void WannierData::Initialize(
                   basis[1]*(double)bare_cell_positions[k][1] +
                   basis[2]*(double)bare_cell_positions[k][2];
               this->wanniers.back().extended_coeffs.push_back(
-                  {bare_coefficients[i][j][k][l],this->cell_positions.size()});
+                  {bare_coefficients[i][j][k][l],this->cell_positions.size(), l});
               this->cell_positions.push_back(tmp_cell_position);
             }
             else {
